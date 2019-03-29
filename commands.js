@@ -114,9 +114,11 @@ var commands = {
   status: {
     parameters: [],
     fn: () => {
-      let text = `You have ${game.money} buck${game.money > 1 ? 's' : 'aroo'}, ${game.plots.length} plot${game.plots.length > 1 ? 's' : ''}, and ${game.land} unit${game.land > 1 ? 's' : ''} of undeveloped land.`;
 
-      ai.speak(text);
+      ai.speak(`You have ${game.money} buck${game.money > 1 ? 's' : 'aroo'}, ${game.plots.length} plot${game.plots.length > 1 ? 's' : ''}, 
+      and ${game.land} unit${game.land > 1 ? 's' : ''} of undeveloped land.`);
+      ai.speak(`You have explored ${game.explored} units of distance so far.`);
+
     }
   },
   list: {
@@ -235,6 +237,30 @@ var commands = {
         }
       }
     }
+  },
+  cancel: {
+    parameters: ["entity"],
+    fn: (entity) => {
+      if (entity.includes('task')) {
+        const task = tasks[game.currentTask.id];
+        if (task) {
+          ai.speak(`Midway through ${task.name}, you decided to give up and return to base.`);
+        }
+        taskUtil.cancel();
+      }
+    }
+  },
+  describe: {
+    parameters: ["plant"],
+    fn: p => {
+      const plant = plantUtil.getPlant(p);
+      if (plant) {
+        const amt = game.inventory[plant.id] || 0;
+        const seeds = game.inventory[`${plant.id}_seed`] || 0;
+        ai.speak(`${plant.name}: Grows in ${plant.season}. Takes ${plant.time} days to mature. Currently sells for ${plant.price} bucks each. 
+        You currently have ${amt} ${amt > 1 ? plant.pl : plant.name}, and ${seeds} ${plant.name} seed${seeds > 1 ? 's' : ''}`);
+      }
+    }
   }
 };
 
@@ -279,7 +305,7 @@ var tasks = {
           minDist: 30,
           maxDist: 1000,
           size: 1,
-          fn: ()=> {
+          fn: () => {
             game.explored += 5;
             invUtil.give('potato_seed', 1);
             ai.speak('You found a packet of potato seeds while exploring!');
@@ -289,7 +315,7 @@ var tasks = {
           minDist: 40,
           maxDist: 1000,
           size: 1,
-          fn: ()=> {
+          fn: () => {
             game.explored += 5;
             invUtil.give('garlic_seed', 1);
             ai.speak('You found a packet of garlic seeds while exploring!');

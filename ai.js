@@ -7,11 +7,12 @@ var ai = {
     interruptSpeaking: () => {
         if (synth.speaking) {
             synth.cancel();
+            synth.speechQueue = [];
             setTimeout(() => {
-                speak(`Okie dokie, I'll be quiet now`);
-            }, 100);
+                ai.speak(`Okie dokie, I'll be quiet now`);
+            }, 500);
         } else {
-            speak(`But I wasn't saying anything!`);
+            ai.speak(`But I wasn't saying anything!`);
         }
     },
     speak: text => {
@@ -20,7 +21,7 @@ var ai = {
         } else {
             if (text !== "") {
                 var utterThis = new SpeechSynthesisUtterance(text);
-                if(ai.preferredVoice){
+                if (ai.preferredVoice) {
                     utterThis.voice = ai.preferredVoice;
                 }
                 utterThis.onend = function (event) {

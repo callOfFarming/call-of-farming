@@ -419,24 +419,16 @@ function listen() {
 }
 
 function enableCheat() {
-  speak("Cheat enabled");
-  document.getElementById("testing").style.display = "block";
+  ai.speak("Well done you figured out the contra code.");
 }
 
-function toggleBlindMode(on) {
-  if (on) {
-    speak("blind mode is now on");
-    document.getElementById("inkWell").style.display = "none";
-  } else {
-    speak("blind mode is off");
-    document.getElementById("inkWell").style.display = "none";
-  }
-}
 
 function explainHelp() {
+  ai.speak(`Ok newbie.`)
   const text = document.getElementById("commands").textContent;
   console.log(text);
-  speak(text);
+  ai.speak(text);
+  ai.speak(`Any other dumb questions?`);
 }
 
 function checkBigCommands(text) {

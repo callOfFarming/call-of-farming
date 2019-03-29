@@ -18,7 +18,7 @@ var bigCommands = {
       speak(`you're welcome`);
     },
     stop: () => {
-      interruptSpeaking();
+      ai.interruptSpeaking();
     },
     sorry: () => {
       speak("No problem");
@@ -38,7 +38,7 @@ var bigCommands = {
           ai.speak(`I am not sure what you are doing really`);
         }
       } else {
-        ai.speak(`You are not currently doing anything, say "list tasks" to get a list of tasks you can currently do`);
+        ai.speak(`You are not currently doing anything, say "list tasks" to get a list of tasks you can currently do. Duh.`);
       }
     },
     "current date": ()=> {
