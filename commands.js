@@ -3,7 +3,17 @@ var commands = {
     parameters: ["plant"],
     fn: p => {
       taskUtil.cancel();
-      plotUtil.plant(p);
+      const planted = plotUtil.plant(p);
+      if (planted) {
+        if (!game.flags.firstPlant) {
+          game.flags.firstPlant = true;
+          ai.speak('Well done, stuff takes time to grow, and when they are ready, you can harvest them.');
+          ai.speak('Some plants need to be replanted, and some will keep producing crops as long as the season does not change.');
+          ai.speak('For the time being, you can do something else like clear land to make room for another plot, or try your luck exploring.');
+          ai.speak('To clear land, say "clear land", to go exploring, say "go exploring".');
+          ai.speak('Please note that while you are away on a task like clearing land or exploring, you cannot harvest. If you harvest or plant stuff, you cancel the current task and lose all progress. Enjoy!');
+        }
+      }
     }
   },
   harvest: {
@@ -85,18 +95,26 @@ var commands = {
         return;
       }
 
-      const seed = p.id + '_seed';
-      const seedPrice = plant.price * 5; // packet of seeds is 5x price of the plant, because we expect 10 plants per harvest
+      const seed = plant.id + '_seed';
+      const seedPrice = plantUtil.getSeedPrice(plant.id); // packet of seeds is 5x price of the plant, because we expect 10 plants per harvest
 
       if (amt === 'all' || amt.includes('max')) {
-        amt = game.money / plant.price
+        amt = game.money / seedPrice
+      }
+
+      if (amt * seedPrice <= game.money) {
+        game.money -= seedPrice * amt;
+        invUtil.give(seed, amt);
+        ai.speak(`You paid ${amt * seedPrice} bucks for ${amt} ${plant.name} seed${amt > 1 ? 's' : ''}`);
+      } else {
+        ai.speak(`I'm afraid you cannot afford to buy ${amt} ${plant.name} seed${amt > 1 ? 's' : ''}`);
       }
     }
   },
   status: {
     parameters: [],
     fn: () => {
-      let text = `You have ${game.money} buck${game.money > 1 ? 's':'aroo'}, ${game.plots.length} plot${game.plots.length > 1 ? 's': ''}, and ${game.land} unit${game.land > 1 ? 's': ''} of undeveloped land.`;
+      let text = `You have ${game.money} buck${game.money > 1 ? 's' : 'aroo'}, ${game.plots.length} plot${game.plots.length > 1 ? 's' : ''}, and ${game.land} unit${game.land > 1 ? 's' : ''} of undeveloped land.`;
 
       ai.speak(text);
     }
@@ -171,9 +189,9 @@ var commands = {
         } else {
           ai.speak("You have no produce");
         }
-      } else if(e.includes("task")){
+      } else if (e.includes("task")) {
         ai.speak(`Here are some tasks you can do: `);
-        Object.keys(tasks).forEach((t)=> {
+        Object.keys(tasks).forEach((t) => {
           const task = tasks[t];
           ai.speak(`${task.id} - ${task.describe}`);
         });
@@ -188,6 +206,35 @@ var commands = {
         taskUtil.startTask("clear land");
       }
     }
+  },
+  look: {
+    parameters: ["action", "entity", "property"],
+    fn: (action, entity, property) => {
+      if (action.includes('up') && property.includes('price')) {
+        const pricelist = [];
+        if (entity.includes('seed')) {
+          // look up seed prices
+
+          Object.keys(game.unlocked).forEach((k) => {
+            if (k.includes('_seed')) {
+              const plant = plantUtil.getPlant(k.split('_seed')[0]);
+              pricelist.push({
+                item: `${plant.name} seeds`,
+                price: plantUtil.getSeedPrice(plant.id)
+              });
+            }
+          })
+        } else if (entity.includes('produce') || entity.includes('product')) {
+          // look up produce prices
+
+        }
+        if (pricelist.length > 0) {
+          pricelist.forEach((p) => {
+            ai.speak(`${p.item}: ${p.price} bucks each.`)
+          });
+        }
+      }
+    }
   }
 };
 
@@ -200,6 +247,87 @@ var tasks = {
     complete: () => {
       game.land += 5;
       ai.speak(`You cleared 5 units of land, you now have ${game.land} units of land.`);
+    }
+  },
+  "explore": {
+    id: "explore",
+    name: "exploring the area",
+    describe: `takes 5 minutes, each time you explore a little further than before, and there is the chance of finding something new, or getting knocked out, so be careful...`,
+    time: 5,
+    complete: () => {
+      const lootTable = [
+        {
+          minDist: 0,
+          maxDist: 1000,
+          size: 50,
+          fn: () => {
+            game.explored += 5;
+            ai.speak('You came back empty handed. Oh well.');
+          }
+        },
+        {
+          minDist: 0,
+          maxDist: 30,
+          size: 5,
+          fn: () => {
+            game.explored += 5;
+            game.money += 20;
+            ai.speak('You found 20 bucks exploring! Go you!')
+          }
+        },
+        {
+          minDist: 30,
+          maxDist: 1000,
+          size: 1,
+          fn: ()=> {
+            game.explored += 5;
+            invUtil.give('potato_seed', 1);
+            ai.speak('You found a packet of potato seeds while exploring!');
+          }
+        },
+        {
+          minDist: 40,
+          maxDist: 1000,
+          size: 1,
+          fn: ()=> {
+            game.explored += 5;
+            invUtil.give('garlic_seed', 1);
+            ai.speak('You found a packet of garlic seeds while exploring!');
+          }
+        }
+      ];
+
+      const avail = lootTable.filter((l) => {
+        if (l.minDist && game.explored < l.minDist) {
+          return false;
+        }
+        if (l.maxDist && game.explored > l.maxDist) {
+          return false;
+        }
+
+        return true;
+      });
+
+      const tot = avail.reduce((tot, l) => {
+        return tot + l.size;
+      }, 0);
+
+      const rand = Math.random() * tot;
+
+      let ind = 0;
+      let over = false;
+      let agg = 0;
+      while (ind <= avail.length && !over) {
+        agg += avail[ind].size;
+        if (agg > rand) {
+          over = true;
+        } else {
+          ind++;
+        }
+      }
+
+      avail[ind].fn();
+
     }
   }
 }
@@ -229,7 +357,7 @@ const taskUtil = {
     ai.speak(`Work work work. You are now ${tasks[id].name}, you will be done ${moment(game.currentTask.finish).fromNow()}. You may cancel this task by saying "cancel task" or issue a new task.`);
 
   },
-  cancel: ()=> {
+  cancel: () => {
     delete game.currentTask;
   }
 }

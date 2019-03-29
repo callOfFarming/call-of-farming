@@ -16,7 +16,9 @@ var game = {
   inventory: {},
   currentTask: null,
   land: 0,
-  unlocked: {}
+  explored: 0,
+  unlocked: {},
+  flags: {}
 };
 
 var plantUtil = {
@@ -36,6 +38,14 @@ var plantUtil = {
     }
 
     return plant;
+  },
+  getSeedPrice: p => {
+    let plant = plantUtil.getPlant(p);
+    if (!plant) {
+      return 0;
+    } else {
+      return plant.price * 5;
+    }
   }
 };
 
@@ -265,9 +275,7 @@ var grammar =
 var diagnostic = document.querySelector(".output");
 var bg = document.querySelector("html");
 var hints = document.querySelector(".hints");
-var inkLevels = document.getElementById("inkLevels");
 var bubble = document.getElementById("speech-bubble");
-var prestigeText = document.getElementById("prestige-text");
 
 var ink = {
   red: 0,
@@ -348,25 +356,6 @@ document.addEventListener("keydown", event => {
 
 /****Init/Config************/
 
-// test
-Object.keys(colors).forEach(c => {
-  document.getElementById(c).addEventListener("click", () => {
-    process(`add ${c}`);
-  });
-
-  document.getElementById(`upgrade-${c}`).addEventListener("click", () => {
-    process(`upgrade ${c}`);
-  });
-});
-
-document.getElementById("prestige").addEventListener("click", () => {
-  process(`prestige`);
-});
-
-document.getElementById("status").addEventListener("click", () => {
-  process("status");
-});
-
 // title screen
 var titleScreen = document.getElementById("title-screen");
 var startButton = document.getElementById("start");
@@ -414,89 +403,10 @@ function itemize(things) {
   });
 }
 
-/****Interacting************/
-
-function incrementInk(color) {
-  ink[color] += colors[color];
-  needUpdate.bg = true;
-  needUpdate.ink = true;
-
-  if (
-    Object.keys(ink).every(k => {
-      return ink[k] >= maxInk;
-    })
-  ) {
-    speak("Well done, you got pure white. The End.");
-  }
-}
-
-function buyUpgrade(color) {
-  if (ink[color] >= cost(color)) {
-    ink[color] -= cost(color);
-    colors[color]++;
-    needUpdate.bg = true;
-    needUpdate.ink = true;
-  }
-}
-
-function prestige() {
-  if (canPrestige) {
-    Object.keys(ink).forEach(c => {
-      ink[c] -= maxInk;
-    });
-    opacity += 1;
-
-    maxInk = Math.round(2550, Math.pow(1.15, opacity - 1));
-    needUpdate.bg = true;
-    needUpdate.ink = true;
-
-    canPrestige = false;
-  }
-}
-
 /****Rendering**********/
 
-function updateBg() {
-  bg.style.backgroundColor = `rgba(${Math.min(
-    (ink.red / maxInk) * 255,
-    255
-  )}, ${Math.min((ink.green / maxInk) * 255, 255)}, ${Math.min(
-    (ink.blue / maxInk) * 255,
-    255
-  )}, ${opacity / 10})`;
-}
-
-function updateInkLevels() {
-  inkLevels.innerHTML = Object.keys(ink).reduce((str, k) => {
-    return (
-      str +
-      `<div ${
-      ink[k] >= cost(k) ? 'class="upgrade"' : ""
-      }><span class="name">${k}</span> <span class="level">${
-      ink[k]
-      }/${maxInk}</span> Adds ${colors[k]} each time, Upgrade Cost: ${cost(
-        k
-      )}</div>`
-    );
-  }, "");
-
-  if (canAffordPrestige()) {
-    canPrestige = true;
-  }
-
-  prestigeText.innerHTML = `Prestige: ${opacity - 1} / 10. ${
-    canPrestige ? "You can prestige" : ""
-    }`;
-}
 
 function update() {
-  if (needUpdate.bg) {
-    updateBg();
-  }
-  if (needUpdate.inkLevels) {
-    updateInkLevels();
-  }
-
   setTimeout(update, 0.5);
 }
 
@@ -603,13 +513,13 @@ function start() {
   if (localStorage.getItem("save")) {
     game = JSON.parse(localStorage.getItem("save"));
   } else {
-    // ai.speak("Howdy! Welcome to Call of Farming!");
-    // ai.speak(
-    //   "You are stranded in a weird magical land with a dilapidated house and an indestructible magical vending machine called Morgan. I am Morgan."
-    // );
-    // ai.speak(
-    //   `To help you along, I have given you a pack of potato seeds and a single plot of land. To plant the seeds, say "plant potatoes"`
-    // );
+    ai.speak("Howdy! Welcome to Call of Farming!");
+    ai.speak(
+      "You are stranded in a weird magical land with a dilapidated house and an indestructible friendly android named Morgan. I am Morgan."
+    );
+    ai.speak(
+      `To help you along, I have given you a pack of potato seeds and a single plot of land. To plant the seeds, say "plant potatoes"`
+    );
     game.timeStarted = Date.now();
     invUtil.give("potato_seed", 1);
     game.unlocked["potato"] = true;

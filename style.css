@@ -1,5 +1,6 @@
 body, html {
     margin: 0;
+    
 }
 
 html {
@@ -7,16 +8,17 @@ html {
 }
 
 body {
-    height: inherit;
-    transition: background-color 0.5s ease;
+    height: 100%;
+    position: relative;
     font-family: sans-serif;
+    background-color: #ddd;
 }
 
 .pane {
     padding: 8px;
     max-width: 600px;
     margin: 16px auto;
-    height: calc(100% - 32px);
+    height: calc(100% - 160px);
     box-sizing: border-box;
     background: rgba(255, 255, 255, 0.8);
     overflow: auto;
@@ -24,7 +26,7 @@ body {
 
 h1, p {
     text-align: center;
-    padding: 20px;
+    padding: 8px;
 }
 
 .commands {

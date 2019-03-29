@@ -46,5 +46,11 @@ var bigCommands = {
       // 1 minute = 1 day
       const days = Math.ceil(elapsed/1000/60);
       ai.speak(`This is day ${days} since you arrived.`);
+    },
+    "go exploring": ()=> {
+      bigCommands["go explore"]();
+    },
+    "go explore": ()=> {
+      taskUtil.startTask("explore");
     }
   };
