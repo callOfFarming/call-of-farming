@@ -2,6 +2,7 @@ var commands = {
   plant: {
     parameters: ["plant"],
     fn: p => {
+      taskUtil.cancel();
       plotUtil.plant(p);
     }
   },
@@ -95,27 +96,9 @@ var commands = {
   status: {
     parameters: [],
     fn: () => {
-      let text = `You currently have ${ink.red} red, ${ink.green} green, ${
-        ink.blue
-        } blue. You are adding ${colors.red} drops of red, ${
-        colors.green
-        } drops of green, and ${colors.blue} drops of blue each time you add. `;
+      let text = `You have ${game.money} buck${game.money > 1 ? 's':'aroo'}, ${game.plots.length} plot${game.plots.length > 1 ? 's': ''}, and ${game.land} unit${game.land > 1 ? 's': ''} of undeveloped land.`;
 
-      const upgradable = Object.keys(ink).filter(k => {
-        return ink[k] >= cost(k);
-      });
-
-      if (upgradable.length > 0) {
-        text += `You can upgrade ${upgradable.join(", ")}. `;
-      }
-
-      if (canPrestige) {
-        text += `You may prestige now if you want. Prestige will cost ${maxInk} of each color.`;
-      } else {
-        text += `You will be able to prestige once you have at least ${maxInk} of each color.`;
-      }
-
-      speak(text);
+      ai.speak(text);
     }
   },
   list: {
@@ -191,8 +174,9 @@ var commands = {
       } else if(e.includes("task")){
         ai.speak(`Here are some tasks you can do: `);
         Object.keys(tasks).forEach((t)=> {
-          ai.speak(``)
-        })
+          const task = tasks[t];
+          ai.speak(`${task.id} - ${task.describe}`);
+        });
       }
     }
   },
@@ -201,7 +185,7 @@ var commands = {
     fn: (entity) => {
       if (entity.includes("land")) {
         // clear land
-        startTask("clear land");
+        taskUtil.startTask("clear land");
       }
     }
   }
@@ -226,7 +210,7 @@ const taskUtil = {
       // is the current task done?
       if (game.currentTask.finish <= Date.now()) {
         tasks[game.currentTask.id].complete();
-        delete game.currentTask.id;
+        delete game.currentTask;
       }
     }
 
@@ -235,15 +219,17 @@ const taskUtil = {
     }, 100);
   },
   startTask: (id) => {
-    if (game.currentTask) {
-      delete game.currentTask; // clear it
-    }
-
+    taskUtil.cancel();
     game.currentTask = {
       id: id,
       started: Date.now(),
       finish: tasks[id].time * 1000 * 60 + Date.now()
     };
 
+    ai.speak(`Work work work. You are now ${tasks[id].name}, you will be done ${moment(game.currentTask.finish).fromNow()}. You may cancel this task by saying "cancel task" or issue a new task.`);
+
+  },
+  cancel: ()=> {
+    delete game.currentTask;
   }
 }

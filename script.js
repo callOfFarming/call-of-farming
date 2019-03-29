@@ -175,7 +175,7 @@ var plotUtil = {
     } else {
       if (plotUtil.finish <= Date.now()) {
         let amt = 10 + plotUtil.fertilizer; // base
-        
+
         invUtil.give(plot.planted, amt);
 
         const hvt = {};
@@ -344,6 +344,7 @@ document.addEventListener("keydown", event => {
     cheatstate = 0;
   }
 });
+
 
 /****Init/Config************/
 
@@ -575,7 +576,28 @@ function process(text) {
   }
 }
 
+function setupSynth() {
+
+  const vlist = synth.getVoices();
+  let preferred;
+  preferredVoices.forEach((pref) => {
+    if (!preferred) {
+      const v = vlist.find(p => p.name.toLowerCase().includes(pref));
+      if (v) {
+        preferred = v;
+      }
+    }
+  });
+
+  if (preferred) {
+    ai.preferredVoice = preferred;
+    console.log('Using preferred voice:', ai.preferredVoice);
+  }
+}
+
 function start() {
+
+  setupSynth();
   titleScreen.style.display = "none";
   // check localstorage
   if (localStorage.getItem("save")) {
@@ -588,6 +610,7 @@ function start() {
     // ai.speak(
     //   `To help you along, I have given you a pack of potato seeds and a single plot of land. To plant the seeds, say "plant potatoes"`
     // );
+    game.timeStarted = Date.now();
     invUtil.give("potato_seed", 1);
     game.unlocked["potato"] = true;
     game.unlocked["potato_seed"] = true;

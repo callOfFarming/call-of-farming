@@ -40,5 +40,11 @@ var bigCommands = {
       } else {
         ai.speak(`You are not currently doing anything, say "list tasks" to get a list of tasks you can currently do`);
       }
+    },
+    "current date": ()=> {
+      const elapsed = Date.now() - game.timeStarted;
+      // 1 minute = 1 day
+      const days = Math.ceil(elapsed/1000/60);
+      ai.speak(`This is day ${days} since you arrived.`);
     }
   };
