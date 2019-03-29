@@ -1,0 +1,76 @@
+<!doctype html>
+<html>
+
+<head>
+    <title>Call of Farming</title>
+    <link rel="stylesheet" href="style.css">
+
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.24.0/moment.min.js"></script>
+
+    <script type="text/javascript" src="plants.js"></script>
+    <script type="text/javascript" src="commands.js"></script>
+    <script type="text/javascript" src="generalCommands.js"></script>
+</head>
+
+<body>
+    <div class="title-screen" id="title-screen">
+
+
+        <button id="start">Start</button>
+        <div>
+            Turn up the sound, and allow the game to use your microphone
+        </div>
+    </div>
+    <div id="speech-bubble">
+
+    </div>
+
+    <p class="output"><em>loading...</em></p>
+
+    <div class="pane">
+        <p class="commands" id="commands">
+            <b>Help content</b><br>
+            Say "stop" to stop me from talking at any time.<br>
+            Say "add color" to add a drop of color, (example: "add red", alternatively just say "red")<br>
+            Say "upgrade color" to upgrade a color so that more of it gets added each time, (example: "Upgrade
+            red").<br>
+            Say "prestige" to sacrifices all ink levels to increase opacity. This also adds a prestige point.<br>
+            Say "status" to get an overview of current ink levels.<br>
+            Say "blindfold on" to hide the ink levels and play by sound only.<br>
+            Say "blindfold off" to show the ink levels on screen. You can still play by sound only.<br>
+        </p>
+        <p class="hints">
+            Try playing this game with the speaker on, and don't look!
+        </p>
+        <div id="inkWell">
+            Ink Well
+            <div id="inkLevels">
+
+            </div>
+            <div id="prestige-text">
+
+            </div>
+        </div>
+
+        <div id="testing" style="display: none">
+
+            <div class="noselect">
+                <button id="red">Red</button>
+                <button id="blue">Blue</button>
+                <button id="green">Green</button>
+            </div>
+            <div class="noselect">
+                <button id="upgrade-red">Upgrade Red</button>
+                <button id="upgrade-blue">Upgrade Blue</button>
+                <button id="upgrade-green">Upgrade Green</button>
+                <button id="prestige">Prestige</button>
+                <button id="status">Status</button>
+            </div>
+        </div>
+    </div>
+
+
+    <script type="text/javascript" src="script.js"></script>
+</body>
+
+</html>
