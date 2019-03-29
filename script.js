@@ -13,7 +13,10 @@ var game = {
   timeStarted: null,
   plots: [],
   money: 0,
-  inventory: {}
+  inventory: {},
+  currentTask: null,
+  land: 0,
+  unlocked: {}
 };
 
 var plantUtil = {
@@ -69,17 +72,41 @@ var invUtil = {
       }
     });
     return ret;
+  },
+  sell: (p, amt) => {
+    const plant = plantUtil.getPlant(p);
+    if (!plant) {
+      return false;
+    }
+
+    if (invUtil.pay(plant.id, amt)) {
+      const money = plant.price * amt;
+      game.money += money;
+      return money;
+    } else {
+      return false;
+    }
   }
 };
 
 var plotUtil = {
+  buyPlot: () => {
+    const land = 20;
+    const cost = Math.round(200 * Math.pow(1.2, game.plots.length - 1));
+
+    if (game.money >= cost && game.land >= land) {
+      game.money -= cost;
+      game.land -= land;
+      plotUtil.addPlot();
+    }
+  },
   addPlot: () => {
     game.plots.push({
       planted: null,
       timePlanted: null,
       ready: false,
-      sprinkler: false,
-      fertilizer: false
+      sprinkler: 0,
+      fertilizer: 0
     });
   },
   available: () => {
@@ -110,6 +137,7 @@ var plotUtil = {
       if (invUtil.pay(`${plant.id}_seed`, 1)) {
         plot.planted = plant.id;
         plot.timePlanted = Date.now();
+        plot.finish = Date.now() + Math.round(plant.time * 1000 * 60 * (Math.pow(0.95, plot.sprinkler)))
         ai.speak(
           `${plant.pl} planted, they will be ready in ${plant.time} minutes`
         );
@@ -145,9 +173,9 @@ var plotUtil = {
         }
       });
     } else {
-      if (plotUtil.timeLeft(plot) <= 0) {
-        let amt = 10; // base
-
+      if (plotUtil.finish <= Date.now()) {
+        let amt = 10 + plotUtil.fertilizer; // base
+        
         invUtil.give(plot.planted, amt);
 
         const hvt = {};
@@ -155,7 +183,7 @@ var plotUtil = {
         plot.ready = false;
         plot.planted = null;
         plot.timePlanted = null;
-
+        plot.finish = null;
         return hvt;
       }
       return null;
@@ -270,21 +298,21 @@ if (SpeechRecognition) {
     process(text);
   };
 
-  recognition.onspeechend = function() {
+  recognition.onspeechend = function () {
     setTimeout(() => {
       listen();
     }, 1000);
     diagnostic.textContent = "...";
   };
 
-  recognition.onnomatch = function(event) {
+  recognition.onnomatch = function (event) {
     diagnostic.textContent = "Unrecognized text";
     setTimeout(() => {
       listen();
     }, 1000);
   };
 
-  recognition.onerror = function(event) {
+  recognition.onerror = function (event) {
     if (event.error !== "not-allowed") {
       setTimeout(() => {
         listen();
@@ -442,9 +470,9 @@ function updateInkLevels() {
     return (
       str +
       `<div ${
-        ink[k] >= cost(k) ? 'class="upgrade"' : ""
+      ink[k] >= cost(k) ? 'class="upgrade"' : ""
       }><span class="name">${k}</span> <span class="level">${
-        ink[k]
+      ink[k]
       }/${maxInk}</span> Adds ${colors[k]} each time, Upgrade Cost: ${cost(
         k
       )}</div>`
@@ -457,7 +485,7 @@ function updateInkLevels() {
 
   prestigeText.innerHTML = `Prestige: ${opacity - 1} / 10. ${
     canPrestige ? "You can prestige" : ""
-  }`;
+    }`;
 }
 
 function update() {
@@ -471,83 +499,6 @@ function update() {
   setTimeout(update, 0.5);
 }
 
-const ai = {
-  currentPrompt: null,
-  promptReminder: null,
-  numReminders: 0,
-  speechQueue: [],
-  interruptSpeaking: () => {
-    if (synth.speaking) {
-      synth.cancel();
-      setTimeout(() => {
-        speak(`Okie dokie, I'll be quiet now`);
-      }, 100);
-    } else {
-      speak(`But I wasn't saying anything!`);
-    }
-  },
-  speak: text => {
-    if (synth.speaking) {
-      ai.speechQueue.push(text);
-    } else {
-      if (text !== "") {
-        var utterThis = new SpeechSynthesisUtterance(text);
-
-        utterThis.onend = function(event) {
-          console.log("SpeechSynthesisUtterance.onend");
-        };
-        utterThis.onerror = function(event) {
-          console.error("SpeechSynthesisUtterance.onerror");
-        };
-
-        synth.speak(utterThis);
-        bubble.textContent = text;
-      } else {
-        if (onFinish) {
-          onFinish();
-        }
-      }
-    }
-  },
-  prompt: text => {
-    ai.currentPrompt = text;
-    if (synth.speaking) {
-      synth.cancel();
-      setTimeout(() => {
-        ai.prompt(text);
-      }, 100);
-    } else {
-      ai.speak(text);
-      ai.promptReminder =
-        Date.now() + Math.round(10 * 1000 * Math.pow(1.25, ai.numReminders));
-    }
-  },
-  answerPrompt: text => {},
-  remindPrompt: () => {
-    if (ai.currentPrompt) {
-      ai.speak(
-        `I haven't heard your answer in a while so let me ask again. ${
-          ai.currentPrompt
-        }`
-      );
-    }
-  },
-  process: () => {
-    if (!synth.speaking) {
-      if (ai.currentPrompt && ai.promptReminder < Date.now()) {
-        ai.remindPrompt();
-      } else {
-        if (ai.speechQueue.length > 0) {
-          const text = ai.speechQueue.shift();
-          ai.speak(text);
-        }
-      }
-    }
-    setTimeout(() => {
-      ai.process();
-    }, 100);
-  }
-};
 
 function listen() {
   if (recognition) {
@@ -638,11 +589,14 @@ function start() {
     //   `To help you along, I have given you a pack of potato seeds and a single plot of land. To plant the seeds, say "plant potatoes"`
     // );
     invUtil.give("potato_seed", 1);
+    game.unlocked["potato"] = true;
+    game.unlocked["potato_seed"] = true;
     plotUtil.addPlot();
   }
 
   ai.process();
   plotUtil.process();
+  taskUtil.process();
 }
 
 function save() {
