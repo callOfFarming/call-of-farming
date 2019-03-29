@@ -15,7 +15,16 @@ var ai = {
             ai.speak(`But I wasn't saying anything!`);
         }
     },
-    speak: text => {
+    speak: (text) => {
+        const parts = text.split('@');
+        let override = false;
+        if (parts.length === 3) {
+            // there is override
+            override = true;
+            bubble.textContent = parts[1];
+            text = parts[3]
+        }
+
         if (synth.speaking) {
             ai.speechQueue.push(text);
         } else {
@@ -32,7 +41,9 @@ var ai = {
                 };
 
                 synth.speak(utterThis);
-                bubble.textContent = text;
+                if (!override) {
+                    bubble.textContent = text;
+                }
             }
         }
     },

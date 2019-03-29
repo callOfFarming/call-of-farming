@@ -427,7 +427,7 @@ function explainHelp() {
   ai.speak(`Ok newbie.`)
   const text = document.getElementById("commands").textContent;
   console.log(text);
-  ai.speak(text);
+  ai.speak(`@Look below@${text}`);
   ai.speak(`Any other dumb questions?`);
 }
 
