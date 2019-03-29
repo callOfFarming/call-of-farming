@@ -16,6 +16,11 @@ var ai = {
         }
     },
     speak: (text) => {
+        text = text.trim();
+        if (!text) {
+            return;
+        }
+
         const parts = text.split('@');
         let override = false;
         if (parts.length === 3) {
