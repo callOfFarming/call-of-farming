@@ -550,18 +550,16 @@ function start() {
   if (localStorage.getItem("save")) {
     game = JSON.parse(localStorage.getItem("save"));
   } else {
-    // ai.speak("Howdy! Welcome to Call of Farming!");
-    // ai.speak(
-    //   "You are stranded in a weird magical land with a dilapidated house and an indestructible friendly android named Morgan. I am Morgan."
-    // );
-    // ai.speak(
-    //   `To help you along, I have given you a pack of potato seeds and a single plot of land. To plant the seeds, say "plant potatoes"`
-    // );
+    ai.speak("Howdy! Welcome to Call of Farming!");
+    ai.speak(
+      "You are stranded in a weird magical land with a dilapidated house and an indestructible friendly android named Morgan. I am Morgan."
+    );
+    ai.speak(
+      `To help you along, I have given you a pack of potato seeds and a single plot of land. To plant the seeds, say "plant potatoes"`
+    );
     game.timeStarted = Date.now();
     invUtil.give("potato_seed", 1);
-    invUtil.give("garlic_seed", 1);
 
-    plotUtil.addPlot();
     plotUtil.addPlot();
   }
 
