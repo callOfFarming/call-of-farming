@@ -1,77 +1,79 @@
+function parseToken(token, type) {
+  if (type === "plant") {
+    const p = Object.keys(plants).find(_p => {
+      _p.pl.toLowerCase().includes(token);
+    });
+    if (p) {
+      return plantUtil.getPlant(p);
+    }
+    return null;
+  } else if (type === "entity") {
+  }
+}
 var commands = {
   plant: {
     parameters: ["plant"],
+    similar: ["plan", "plane"],
     fn: p => {
       taskUtil.cancel();
       const planted = plotUtil.plant(p);
       if (planted) {
         if (!game.flags.firstPlant) {
           game.flags.firstPlant = true;
-          ai.speak('Well done, stuff takes time to grow, and when they are ready, you can harvest them.');
-          ai.speak('Some plants need to be replanted, and some will keep producing crops as long as the season does not change.');
-          ai.speak('For the time being, you can do something else like clear land to make room for another plot, or try your luck exploring.');
-          ai.speak('To clear land, say "clear land", to go exploring, say "go exploring".');
-          ai.speak('Please note that while you are away on a task like clearing land or exploring, you cannot harvest. If you harvest or plant stuff, you cancel the current task and lose all progress. Enjoy!');
+          ai.speak(
+            "Well done, stuff takes time to grow, and when they are ready, you can harvest them."
+          );
+          ai.speak(
+            "Some plants need to be replanted, and some will keep producing crops as long as the season does not change."
+          );
+          ai.speak(
+            "For the time being, you can do something else like clear land to make room for another plot, or try your luck exploring."
+          );
+          ai.speak(
+            'To clear land, say "clear land", to go exploring, say "go exploring".'
+          );
+          ai.speak(
+            "Please note that while you are away on a task like clearing land or exploring, you cannot harvest. If you harvest or plant stuff, you cancel the current task and lose all progress. Enjoy!"
+          );
         }
       }
     }
   },
   harvest: {
-    parameters: ["entity", "index"],
-    fn: (entity, index) => {
-      const hvt = {};
-      const ind = Number.parseInt(index, 10);
-      if (ind >= 0) {
-        if (game.plots.length < ind) {
-          // plot does not exist
-          return;
-        } else {
-          const plot = game.plots[ind - 1];
-          if (!plot.ready) {
-            ai.speak(`Plot ${ind} is not ready for harvesting yet.`)
+    parameters: [],
+    similar: ["harvest", "arvest"],
+    fn: () => {
+      let count = 0;
+      game.plots.forEach((plot, index) => {
+        if (plot.ready) {
+          const plant = plantUtil.getPlant(plot.planted);
+          const h = plotUtil.harvest(plot);
+          if (h) {
+            ai.speak(`Harvested ${toList(itemize(h))} from Plot ${index + 1}.`);
+            if (plant.multipleHarvests) {
+              ai.speak(
+                `${plant.pl} will be ready for another harvesting in ${
+                  plant.time
+                } minutes`
+              );
+            }
+            count++;
           }
         }
-      }
-      game.plots
-        .filter(p => p.ready)
-        .forEach(p => {
-          const h = plotUtil.harvest(p);
-          if (h) {
-            Object.keys(h).forEach(k => {
-              if (!hvt[k]) {
-                hvt[k] = 0;
-              }
-              hvt[k] += h[k];
-            });
-          }
-        });
-      const plants = Object.keys(hvt);
-      if (plants.length === 0) {
-        ai.speak(
-          "Nothing was harvested because none of the plots were ready for harvesting"
-        );
-      } else {
-        const list = toList(
-          plants.map(p => {
-            const plant = plantUtil.getPlant(p);
-            const amt = hvt[p];
-            if (amt > 1) {
-              return `${amt} ${plant.pl}`;
-            } else {
-              return `${amt} ${plant.name}`;
-            }
-          })
-        );
-        ai.speak(`Harvested ${list}`);
+      });
+
+      if (count === 0) {
+        ai.speak(`None of the plots were ready for harvesting`);
       }
     }
   },
   sell: {
     parameters: ["amt", "entity"],
+    similar: ["cel", "sel", "sal", "cell", "spell", "spelt"],
     fn: (amt, entity) => {
       const plant = plantUtil.getPlant(entity);
       if (plant) {
-        if (amt === 'all' || amt.includes("max")) {
+        if (amt === "all" || amt.includes("max")) {
           amt = game.inventory[plant.id] || 0;
         } else {
           amt = Number.parseInt(amt, 10);
@@ -79,7 +81,11 @@ var commands = {
         if (amt > 0) {
           const sold = invUtil.sell(entity, amt);
           if (sold) {
-            ai.speak(`Sold ${amt} ${amt === 1 ? plant.name : plant.pl} for ${sold} buck${sold === 1 ? 'aroo' : 's'}`)
+            ai.speak(
+              `Sold ${amt} ${
+                amt === 1 ? plant.name : plant.pl
+              } for ${sold} buck${sold === 1 ? "aroo" : "s"}`
+            );
           } else {
             ai.speak(`Sorry you do not have ${amt} ${plant.pl} to sell`);
           }
@@ -89,40 +95,63 @@ var commands = {
   },
   buy: {
     parameters: ["amt", "plant", "entity"],
+    similar: ["buy", "bye", "by"],
+    fn: (amt, p, entity) => {
+      commands.purchase.fn(amt, p, entity);
+    }
+  },
+  purchase: {
+    parameters: ["amt", "plant", "entity"],
+    similar: ["purchase"],
     fn: (amt, p, entity) => {
       const plant = plantUtil.getPlant(p);
       if (!plant) {
         return;
       }
 
-      const seed = plant.id + '_seed';
+      const seed = plant.id + "_seed";
       const seedPrice = plantUtil.getSeedPrice(plant.id); // packet of seeds is 5x price of the plant, because we expect 10 plants per harvest
 
-      if (amt === 'all' || amt.includes('max')) {
-        amt = game.money / seedPrice
+      if (amt === "all" || amt.includes("max")) {
+        amt = game.money / seedPrice;
+      } else {
+        amt = parser.number(amt);
+        if (amt === null) {
+          return;
+        }
       }
 
       if (amt * seedPrice <= game.money) {
         game.money -= seedPrice * amt;
         invUtil.give(seed, amt);
-        ai.speak(`You paid ${amt * seedPrice} bucks for ${amt} ${plant.name} seed${amt > 1 ? 's' : ''}`);
+        ai.speak(
+          `You paid ${amt * seedPrice} bucks for ${amt} ${plant.name} seed${
+            amt > 1 ? "s" : ""
+          }`
+        );
       } else {
-        ai.speak(`I'm afraid you cannot afford to buy ${amt} ${plant.name} seed${amt > 1 ? 's' : ''}`);
+        ai.speak(
+          `I'm afraid you cannot afford to buy ${amt} ${plant.name} seed${
+            amt > 1 ? "s" : ""
+          }`
+        );
       }
     }
   },
   status: {
     parameters: [],
+    similar: ["state", "states"],
     fn: () => {
-
-      ai.speak(`You have ${game.money} buck${game.money > 1 ? 's' : 'aroo'}, ${game.plots.length} plot${game.plots.length > 1 ? 's' : ''}, 
-      and ${game.land} unit${game.land > 1 ? 's' : ''} of undeveloped land.`);
+      ai.speak(`You have ${game.money} buck${game.money > 1 ? "s" : "aroo"}, ${
+        game.plots.length
+      } plot${game.plots.length > 1 ? "s" : ""}, 
+      and ${game.land} unit${game.land > 1 ? "s" : ""} of undeveloped land.`);
       ai.speak(`You have explored ${game.explored} units of distance so far.`);
-
     }
   },
   list: {
     parameters: ["entity"],
+    similar: ["lis", "less", "liz"],
     fn: e => {
       if (!e) {
         return;
@@ -136,42 +165,52 @@ var commands = {
         if (numEmpty > 0) {
           text += ` ${numEmpty} ${numEmpty === 1 ? "is" : "are"} unused.`;
         }
-        if (numUsed.length > 0) {
+        if (numUsed > 0) {
           text += ` ${numUsed} ${numUsed === 1 ? "is" : "are"} in use.`;
+
+          ai.speak(text);
           if (numUsed <= 5) {
             commands.list.fn("plants");
           } else {
-            text += `If you would like a full list of currently growing plants, please say "list plants"`;
+            ai.speak(`If you would like a full list of currently growing plants, please say "list plants"`);
           }
+        } else {
+          ai.speak(text);
         }
-        ai.speak(text);
       } else if (e.includes("plant")) {
-        let text = "";
         const numUsed = game.plots.filter(p => p.planted).length;
         if (numUsed === 0) {
-          text += `You do not have anything growing at the moment`;
+          ai.speak(`You do not have anything growing at the moment.`);
         } else {
-          const ready = game.plots.filter(p => p.ready);
-          if (ready.length > 0) {
-            text += `You have ${ready.length} plot${
-              ready.length === 1 ? "" : "s"
-              } ready for harvesting.`;
+          let countReady = 0;
+          game.plots.forEach((p, index) => {
+            if (p.ready) {
+              const plant = plantUtil.getPlant(p.planted);
+              ai.speak(
+                `${plant.pl} are ready for harvesting at Plot ${index + 1}. `
+              );
+              countReady++;
+            }
+          });
+
+          if (countReady.length === 0) {
+            ai.speak(`Nothing can be harvested at the moment.`);
           }
 
           game.plots.forEach((plot, index) => {
             if (!plot.ready && plot.planted && plot.timePlanted) {
               const plant = plantUtil.getPlant(plot.planted);
-              const mature = plotUtil.timeToMature(plot);
+              const mature = plot.finish;
               if (mature > Date.now()) {
-                text += `plot ${index + 1} is growing ${
-                  plant.pl
-                  }, they will be ready ${moment(mature).fromNow()}`;
+                ai.speak(
+                  `Plot ${index + 1} is growing ${
+                    plant.pl
+                  }, they will be ready ${moment(mature).fromNow()}.`
+                );
               }
             }
           });
         }
-
-        ai.speak(text);
       } else if (e.includes("seed")) {
         // go through inventory, find seeds
         const seeds = itemize(invUtil.listSeeds());
@@ -193,7 +232,7 @@ var commands = {
         }
       } else if (e.includes("task")) {
         ai.speak(`Here are some tasks you can do: `);
-        Object.keys(tasks).forEach((t) => {
+        Object.keys(tasks).forEach(t => {
           const task = tasks[t];
           ai.speak(`${task.id} - ${task.describe}`);
         });
@@ -202,7 +241,8 @@ var commands = {
   },
   clear: {
     parameters: ["entity"],
-    fn: (entity) => {
+    similar: ["claire", "cleer", "clearing", "care", "clears"],
+    fn: entity => {
       if (entity.includes("land")) {
         // clear land
         taskUtil.startTask("clear land");
@@ -211,28 +251,36 @@ var commands = {
   },
   look: {
     parameters: ["action", "entity", "property"],
+    similar: ["luck", "looks", "lucks"],
     fn: (action, entity, property) => {
-      if (action.includes('up') && property.includes('price')) {
+      if (action.includes("up") && property && property.includes("price")) {
         const pricelist = [];
-        if (entity.includes('seed')) {
+        if (entity.includes("seed")) {
           // look up seed prices
 
-          Object.keys(game.unlocked).forEach((k) => {
-            if (k.includes('_seed')) {
-              const plant = plantUtil.getPlant(k.split('_seed')[0]);
+          Object.keys(game.unlocked).forEach(k => {
+            if (k.includes("_seed")) {
+              const plant = plantUtil.getPlant(k.split("_seed")[0]);
               pricelist.push({
                 item: `${plant.name} seeds`,
                 price: plantUtil.getSeedPrice(plant.id)
               });
             }
-          })
-        } else if (entity.includes('produce') || entity.includes('product')) {
+          });
+        } else if (entity.includes("produce") || entity.includes("product")) {
           // look up produce prices
-
+          Object.keys(game.unlocked).forEach(p => {
+            const plant = plantUtil.getPlant(p);
+            if (plant) {
+              ai.speak(
+                `${plant.pl} are currently selling for ${plant.price} each.`
+              );
+            }
+          });
         }
         if (pricelist.length > 0) {
-          pricelist.forEach((p) => {
-            ai.speak(`${p.item}: ${p.price} bucks each.`)
+          pricelist.forEach(p => {
+            ai.speak(`${p.item}: ${p.price} bucks each.`);
           });
         }
       }
@@ -240,11 +288,16 @@ var commands = {
   },
   cancel: {
     parameters: ["entity"],
-    fn: (entity) => {
-      if (entity.includes('task')) {
+    similar: ["cancer", "cansel", "hansel"],
+    fn: entity => {
+      if (entity.includes("task")) {
         const task = tasks[game.currentTask.id];
         if (task) {
-          ai.speak(`Midway through ${task.name}, you decided to give up and return to base.`);
+          ai.speak(
+            `Midway through ${
+              task.name
+            }, you decided to give up and return to base.`
+          );
         }
         taskUtil.cancel();
       }
@@ -252,13 +305,25 @@ var commands = {
   },
   describe: {
     parameters: ["plant"],
+    similar: ["describe"],
     fn: p => {
       const plant = plantUtil.getPlant(p);
       if (plant) {
         const amt = game.inventory[plant.id] || 0;
         const seeds = game.inventory[`${plant.id}_seed`] || 0;
-        ai.speak(`${plant.name}: Grows in ${plant.season}. Takes ${plant.time} days to mature. Currently sells for ${plant.price} bucks each. 
-        You currently have ${amt} ${amt > 1 ? plant.pl : plant.name}, and ${seeds} ${plant.name} seed${seeds > 1 ? 's' : ''}`);
+        ai.speak(
+          `${plant.name}: Grows in ${plant.season}. Takes ${
+            plant.time
+          } days to mature.`
+        );
+        if (plant.multipleHarvests) {
+          ai.speak(`${plant.pl} do not have to be replanted after harvest`);
+        }
+
+        ai.speak(`${plant.name} currently sells for ${plant.price} bucks each. 
+        You currently have ${amt} ${
+          amt > 1 ? plant.pl : plant.name
+        }, and ${seeds} ${plant.name} seed${seeds > 1 ? "s" : ""}`);
       }
     }
   }
@@ -272,10 +337,12 @@ var tasks = {
     time: 2,
     complete: () => {
       game.land += 5;
-      ai.speak(`You cleared 5 units of land, you now have ${game.land} units of land.`);
+      ai.speak(
+        `You cleared 5 units of land, you now have ${game.land} units of land.`
+      );
     }
   },
-  "explore": {
+  explore: {
     id: "explore",
     name: "exploring the area",
     describe: `takes 5 minutes, each time you explore a little further than before, and there is the chance of finding something new, or getting knocked out, so be careful...`,
@@ -288,7 +355,7 @@ var tasks = {
           size: 50,
           fn: () => {
             game.explored += 5;
-            ai.speak('You came back empty handed. Oh well.');
+            ai.speak("You came back empty handed. Oh well.");
           }
         },
         {
@@ -298,7 +365,7 @@ var tasks = {
           fn: () => {
             game.explored += 5;
             game.money += 20;
-            ai.speak('You found 20 bucks exploring! Go you!')
+            ai.speak("You found 20 bucks exploring! Go you!");
           }
         },
         {
@@ -307,8 +374,8 @@ var tasks = {
           size: 1,
           fn: () => {
             game.explored += 5;
-            invUtil.give('potato_seed', 1);
-            ai.speak('You found a packet of potato seeds while exploring!');
+            invUtil.give("potato_seed", 1);
+            ai.speak("You found a packet of potato seeds while exploring!");
           }
         },
         {
@@ -317,13 +384,13 @@ var tasks = {
           size: 1,
           fn: () => {
             game.explored += 5;
-            invUtil.give('garlic_seed', 1);
-            ai.speak('You found a packet of garlic seeds while exploring!');
+            invUtil.give("garlic_seed", 1);
+            ai.speak("You found a packet of garlic seeds while exploring!");
           }
         }
       ];
 
-      const avail = lootTable.filter((l) => {
+      const avail = lootTable.filter(l => {
         if (l.minDist && game.explored < l.minDist) {
           return false;
         }
@@ -353,10 +420,9 @@ var tasks = {
       }
 
       avail[ind].fn();
-
     }
   }
-}
+};
 
 const taskUtil = {
   process: () => {
@@ -372,7 +438,7 @@ const taskUtil = {
       taskUtil.process();
     }, 100);
   },
-  startTask: (id) => {
+  startTask: id => {
     taskUtil.cancel();
     game.currentTask = {
       id: id,
@@ -380,10 +446,13 @@ const taskUtil = {
       finish: tasks[id].time * 1000 * 60 + Date.now()
     };
 
-    ai.speak(`Work work work. You are now ${tasks[id].name}, you will be done ${moment(game.currentTask.finish).fromNow()}. You may cancel this task by saying "cancel task" or issue a new task.`);
-
+    ai.speak(
+      `Work work work. You are now ${tasks[id].name}, you will be done ${moment(
+        game.currentTask.finish
+      ).fromNow()}. You may cancel this task by saying "cancel task" or issue a new task.`
+    );
   },
   cancel: () => {
     delete game.currentTask;
   }
-}
+};

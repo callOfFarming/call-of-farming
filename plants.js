@@ -4,7 +4,8 @@ var plants = {
     pl: "Garlics",
     price: 50,
     time: 3,
-    season: "spring"
+    season: "spring",
+    multipleHarvest: true
   },
   kale: {
     name: "Kale",

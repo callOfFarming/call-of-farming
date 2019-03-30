@@ -44,7 +44,11 @@ var plantUtil = {
     if (!plant) {
       return 0;
     } else {
-      return plant.price * 5;
+      if (plant.multipleHarvest) {
+        return plant.price * 10;
+      } else {
+        return plant.price * 5;
+      }
     }
   }
 };
@@ -54,7 +58,14 @@ var invUtil = {
     if (!game.inventory[thing]) {
       game.inventory[thing] = 0;
     }
-
+    if (thing.includes("_seed")) {
+      const p = thing.split("_seed")[0];
+      const plant = plantUtil.getPlant(p);
+      if (plant) {
+        game.unlocked[thing] = true;
+        game.unlocked[plant.id] = true;
+      }
+    }
     game.inventory[thing] += amt;
   },
   pay: (thing, amt) => {
@@ -147,7 +158,8 @@ var plotUtil = {
       if (invUtil.pay(`${plant.id}_seed`, 1)) {
         plot.planted = plant.id;
         plot.timePlanted = Date.now();
-        plot.finish = Date.now() + Math.round(plant.time * 1000 * 60 * (Math.pow(0.95, plot.sprinkler)))
+        plot.finish = plotUtil.calcFinishTime(plant, plot);
+
         ai.speak(
           `${plant.pl} planted, they will be ready in ${plant.time} minutes`
         );
@@ -159,20 +171,11 @@ var plotUtil = {
       ai.speak(`Sorry, you don't have any free plots`);
     }
   },
-  timeLeft: plot => {
-    if (plot.timePlanted && plot.planted) {
-      const matureTime = plotUtil.timeToMature(plot);
-      const delta = matureTime - Date.now();
-      return delta;
-    }
-  },
-  timeToMature: plot => {
-    if (plot.timePlanted && plot.planted) {
-      const plant = plantUtil.getPlant(plot.planted);
-      const matureTime = plot.timePlanted + plant.time * 1000 * 60;
-      return matureTime;
-    }
-    return 0;
+  calcFinishTime: (plant, plot) => {
+    return (
+      Date.now() +
+      Math.round(plant.time * 1000 * 60 * Math.pow(0.95, plot.sprinkler))
+    );
   },
   harvest: plot => {
     if (!plot) {
@@ -183,17 +186,22 @@ var plotUtil = {
         }
       });
     } else {
-      if (plotUtil.finish <= Date.now()) {
-        let amt = 10 + plotUtil.fertilizer; // base
+      if (plot.finish <= Date.now()) {
+        const plant = plantUtil.getPlant(plot.planted);
+        let amt = 10 + (plotUtil.fertilizer || 0); // base
 
         invUtil.give(plot.planted, amt);
 
         const hvt = {};
         hvt[plot.planted] = amt;
         plot.ready = false;
-        plot.planted = null;
-        plot.timePlanted = null;
-        plot.finish = null;
+        if (!plant.multipleHarvest) {
+          plot.timePlanted = null;
+          plot.finish = null;
+          plot.planted = null;
+        } else {
+          plot.finish = plotUtil.calcFinishTime(plant, plot);
+        }
         return hvt;
       }
       return null;
@@ -216,7 +224,7 @@ var plotUtil = {
     const matured = {};
     game.plots.forEach(p => {
       if (p.planted && p.timePlanted && !p.ready) {
-        if (plotUtil.timeLeft(p) <= 0) {
+        if (p.finish <= Date.now()) {
           p.ready = true;
           matured[p.planted] = true;
         }
@@ -258,8 +266,18 @@ var needUpdate = {
   inkLevels: true
 };
 
-var entities = ['seed', 'produce', 'plant', 'plot', 'sprinkler', 'fertilizer', 'morgan', 'sell', 'buy', 'multiple'];
-
+var entities = [
+  "seed",
+  "produce",
+  "plant",
+  "plot",
+  "sprinkler",
+  "fertilizer",
+  "morgan",
+  "sell",
+  "buy",
+  "multiple"
+];
 
 var grammar =
   "#JSGF V1.0; grammar codewords; public <codewords> = " +
@@ -295,32 +313,45 @@ if (SpeechRecognition) {
   recognition.continuous = true;
   recognition.lang = "en-US";
   recognition.interimResults = false;
-  recognition.maxAlternatives = 1;
+  recognition.maxAlternatives = 10;
 
   recognition.onresult = event => {
+    event.results;
     var last = event.results.length - 1;
-    var text = event.results[last][0].transcript;
+    const alts = [];
+    for (let i = 0; i < event.results[last].length; i++) {
+      alts.push(event.results[last][i]);
+    }
+
+    const ts = alts.map(t => {
+      return parser.interpret(t.transcript, t.confidence);
+    });
+    ts.sort((a, b) => {
+      return b.matched - a.matched;
+    });
+
+    var text = ts[0].transcript;
 
     diagnostic.textContent = "Command: " + text;
-    console.log("Confidence: " + event.results[0][0].confidence);
+    console.log(ts);
     process(text);
   };
 
-  recognition.onspeechend = function () {
+  recognition.onspeechend = function() {
     setTimeout(() => {
       listen();
     }, 1000);
     diagnostic.textContent = "...";
   };
 
-  recognition.onnomatch = function (event) {
+  recognition.onnomatch = function(event) {
     diagnostic.textContent = "Unrecognized text";
     setTimeout(() => {
       listen();
     }, 1000);
   };
 
-  recognition.onerror = function (event) {
+  recognition.onerror = function(event) {
     if (event.error !== "not-allowed") {
       setTimeout(() => {
         listen();
@@ -352,7 +383,6 @@ document.addEventListener("keydown", event => {
     cheatstate = 0;
   }
 });
-
 
 /****Init/Config************/
 
@@ -405,11 +435,9 @@ function itemize(things) {
 
 /****Rendering**********/
 
-
 function update() {
   setTimeout(update, 0.5);
 }
-
 
 function listen() {
   if (recognition) {
@@ -422,9 +450,8 @@ function enableCheat() {
   ai.speak("Well done you figured out the contra code.");
 }
 
-
 function explainHelp() {
-  ai.speak(`Ok newbie.`)
+  ai.speak(`Ok newbie.`);
   const text = document.getElementById("commands").textContent;
   console.log(text);
   ai.speak(`@Look below@${text}`);
@@ -446,6 +473,8 @@ function checkBigCommands(text) {
 
 function process(text) {
   text = text.toLowerCase();
+  text = text.trim();
+  console.log("Processing text: ", text);
   if (checkBigCommands(text)) {
     return;
   }
@@ -468,21 +497,38 @@ function process(text) {
       }
     }
 
-    if (command && parameters.length === command.parameters.length) {
-      command.fn.apply(this, parameters);
-      command = null;
-      parameters = [];
-    }
-
     i++;
+  }
+
+  if (command) {
+    let i = 0;
+    let j = 0;
+    const params = [];
+    // while (i <= parameters.length && j < command.parameters.length) {
+    //   const expected = command.parameters[j];
+    //   const token = parameters[i];
+    //   const parsed = parseToken(token, expected);
+
+    //   if (parsed) {
+    //     params.push(parsed);
+    //     j++;
+    //   }
+    //   i++;
+    // }
+    // if (command.parameters.length === params.length) {
+    //   command.fn.apply(this, parameters);
+    // }
+
+    command.fn.apply(this, parameters);
+    command = null;
+    parameters = [];
   }
 }
 
 function setupSynth() {
-
   const vlist = synth.getVoices();
   let preferred;
-  preferredVoices.forEach((pref) => {
+  preferredVoices.forEach(pref => {
     if (!preferred) {
       const v = vlist.find(p => p.name.toLowerCase().includes(pref));
       if (v) {
@@ -493,29 +539,29 @@ function setupSynth() {
 
   if (preferred) {
     ai.preferredVoice = preferred;
-    console.log('Using preferred voice:', ai.preferredVoice);
+    console.log("Using preferred voice:", ai.preferredVoice);
   }
 }
 
 function start() {
-
   setupSynth();
   titleScreen.style.display = "none";
   // check localstorage
   if (localStorage.getItem("save")) {
     game = JSON.parse(localStorage.getItem("save"));
   } else {
-    ai.speak("Howdy! Welcome to Call of Farming!");
-    ai.speak(
-      "You are stranded in a weird magical land with a dilapidated house and an indestructible friendly android named Morgan. I am Morgan."
-    );
-    ai.speak(
-      `To help you along, I have given you a pack of potato seeds and a single plot of land. To plant the seeds, say "plant potatoes"`
-    );
+    // ai.speak("Howdy! Welcome to Call of Farming!");
+    // ai.speak(
+    //   "You are stranded in a weird magical land with a dilapidated house and an indestructible friendly android named Morgan. I am Morgan."
+    // );
+    // ai.speak(
+    //   `To help you along, I have given you a pack of potato seeds and a single plot of land. To plant the seeds, say "plant potatoes"`
+    // );
     game.timeStarted = Date.now();
     invUtil.give("potato_seed", 1);
-    game.unlocked["potato"] = true;
-    game.unlocked["potato_seed"] = true;
+    invUtil.give("garlic_seed", 1);
+
+    plotUtil.addPlot();
     plotUtil.addPlot();
   }
 
