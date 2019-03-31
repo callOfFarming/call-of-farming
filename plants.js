@@ -75,3 +75,36 @@ var plants = {
 Object.keys(plants).forEach(k => {
   plants[k].id = k;
 });
+
+
+var plantUtil = {
+  getPlant: p => {
+    let plant = plants[p];
+    // try plural
+    if (!plant) {
+      const _p = Object.keys(plants).find(k => {
+        const _plant = plants[k];
+        if (_plant.pl.toLowerCase() === p) {
+          return true;
+        }
+      });
+      if (_p) {
+        plant = plants[_p];
+      }
+    }
+
+    return plant;
+  },
+  getSeedPrice: p => {
+    let plant = plantUtil.getPlant(p);
+    if (!plant) {
+      return 0;
+    } else {
+      if (plant.multipleHarvest) {
+        return plant.price * 10;
+      } else {
+        return plant.price * 5;
+      }
+    }
+  }
+};

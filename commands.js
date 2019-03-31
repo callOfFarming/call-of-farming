@@ -71,6 +71,32 @@ var commands = {
     parameters: ["amt", "entity"],
     similar: ["cel", "sel", "sal", "cell", "spell", "spelt"],
     fn: (amt, entity) => {
+      if (amt === "everything" || entity === "everything") {
+        // sell everything
+        let sold = false;
+        Object.keys(game.inventory)
+          .filter(p => {
+            return plantUtil.getPlant(p);
+          })
+          .forEach(p => {
+            const amt = game.inventory[p];
+            const money = invUtil.sell(p, amt);
+            if (money > 0) {
+              const plant = plantUtil.getPlant(p);
+              sold = true;
+              ai.speak(
+                `Sold ${amt} ${amt > 1 ? plant.pl : plant} for ${money}`
+              );
+            }
+          });
+
+        if (!sold) {
+          ai.speak(`You didn't have any produce to sell`);
+        } else {
+          ai.speak(`You now have ${game.money} bucks`);
+        }
+        return;
+      }
       const plant = plantUtil.getPlant(entity);
       if (plant) {
         if (amt === "all" || amt.includes("max")) {
@@ -94,16 +120,38 @@ var commands = {
     }
   },
   buy: {
-    parameters: ["amt", "plant", "entity"],
+    parameters: ["amt", "plant"],
     similar: ["buy", "bye", "by"],
     fn: (amt, p, entity) => {
       commands.purchase.fn(amt, p, entity);
     }
   },
   purchase: {
-    parameters: ["amt", "plant", "entity"],
+    parameters: ["amt|'plot'", "plant"],
     similar: ["purchase"],
-    fn: (amt, p, entity) => {
+    fn: (amt, p) => {
+      if(amt.includes('plot') || p.includes('plot')){
+        // buying a plot
+        const bought = plotUtil.buyPlot();
+        if(bought){
+          ai.speak(`Bought a plot for ${bought.cost} bucks and ${bought.land} land.`)
+        } else {
+          const cost = plotUtil.cost();
+          const canAfford = game.money >= cost;
+          const haveLand = game.land >= 20;
+          let text = `You couldn't afford to buy a plot.`
+          if(!canAfford){
+            text+= ` You have ${game.money} buck${game.money > 1 ? 's':'aroo'}, but needed ${cost} bucks.`
+          }
+          if(!haveLand){
+            text += ` You have ${game.land} land, but need 20 units of undeveloped land.`
+          }
+          ai.speak(text);
+        }
+        return;
+      }
+
+
       const plant = plantUtil.getPlant(p);
       if (!plant) {
         return;
@@ -172,7 +220,9 @@ var commands = {
           if (numUsed <= 5) {
             commands.list.fn("plants");
           } else {
-            ai.speak(`If you would like a full list of currently growing plants, please say "list plants"`);
+            ai.speak(
+              `If you would like a full list of currently growing plants, please say "list plants"`
+            );
           }
         } else {
           ai.speak(text);

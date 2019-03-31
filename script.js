@@ -1,7 +1,3 @@
-var SpeechRecognition = SpeechRecognition || window["webkitSpeechRecognition"];
-var SpeechGrammarList = SpeechGrammarList || window["webkitSpeechGrammarList"];
-var SpeechRecognitionEvent =
-  SpeechRecognitionEvent || window["webkitSpeechRecognitionEvent"];
 
 var colors = {
   red: 1,
@@ -21,229 +17,6 @@ var game = {
   flags: {}
 };
 
-var plantUtil = {
-  getPlant: p => {
-    let plant = plants[p];
-    // try plural
-    if (!plant) {
-      const _p = Object.keys(plants).find(k => {
-        const _plant = plants[k];
-        if (_plant.pl.toLowerCase() === p) {
-          return true;
-        }
-      });
-      if (_p) {
-        plant = plants[_p];
-      }
-    }
-
-    return plant;
-  },
-  getSeedPrice: p => {
-    let plant = plantUtil.getPlant(p);
-    if (!plant) {
-      return 0;
-    } else {
-      if (plant.multipleHarvest) {
-        return plant.price * 10;
-      } else {
-        return plant.price * 5;
-      }
-    }
-  }
-};
-
-var invUtil = {
-  give: (thing, amt) => {
-    if (!game.inventory[thing]) {
-      game.inventory[thing] = 0;
-    }
-    if (thing.includes("_seed")) {
-      const p = thing.split("_seed")[0];
-      const plant = plantUtil.getPlant(p);
-      if (plant) {
-        game.unlocked[thing] = true;
-        game.unlocked[plant.id] = true;
-      }
-    }
-    game.inventory[thing] += amt;
-  },
-  pay: (thing, amt) => {
-    if (!game.inventory[thing] || game.inventory[thing] < amt) {
-      return false;
-    } else {
-      game.inventory[thing] -= amt;
-      return true;
-    }
-  },
-  listSeeds: () => {
-    const ret = {};
-    Object.keys(game.inventory).forEach(k => {
-      if (game.inventory[k] > 0 && k.includes("_seed")) {
-        ret[k] = game.inventory[k];
-      }
-    });
-    return ret;
-  },
-  listPlants: () => {
-    const ret = {};
-    Object.keys(game.inventory).forEach(k => {
-      if (game.inventory[k] > 0 && plants[k]) {
-        ret[k] = game.inventory[k];
-      }
-    });
-    return ret;
-  },
-  sell: (p, amt) => {
-    const plant = plantUtil.getPlant(p);
-    if (!plant) {
-      return false;
-    }
-
-    if (invUtil.pay(plant.id, amt)) {
-      const money = plant.price * amt;
-      game.money += money;
-      return money;
-    } else {
-      return false;
-    }
-  }
-};
-
-var plotUtil = {
-  buyPlot: () => {
-    const land = 20;
-    const cost = Math.round(200 * Math.pow(1.2, game.plots.length - 1));
-
-    if (game.money >= cost && game.land >= land) {
-      game.money -= cost;
-      game.land -= land;
-      plotUtil.addPlot();
-    }
-  },
-  addPlot: () => {
-    game.plots.push({
-      planted: null,
-      timePlanted: null,
-      ready: false,
-      sprinkler: 0,
-      fertilizer: 0
-    });
-  },
-  available: () => {
-    return game.plots.filter(p => {
-      return p.planted === null;
-    });
-  },
-  currentlyPlanted: () => {
-    const plants = {};
-    game.plots.forEach(p => {
-      if (p.planted && !plants[p.planted]) {
-        plants[p.planted] = 1;
-      }
-    });
-    return Object.keys(plants);
-  },
-  plant: p => {
-    const plant = plantUtil.getPlant(p);
-    const available = plotUtil.available();
-    if (!plant) {
-      ai.speak(
-        `Sorry, I'm not sure what ${p} is, please plant something *real*`
-      );
-      return;
-    }
-    if (available.length > 0) {
-      const plot = available[0];
-      if (invUtil.pay(`${plant.id}_seed`, 1)) {
-        plot.planted = plant.id;
-        plot.timePlanted = Date.now();
-        plot.finish = plotUtil.calcFinishTime(plant, plot);
-
-        ai.speak(
-          `${plant.pl} planted, they will be ready in ${plant.time} minutes`
-        );
-        return true;
-      } else {
-        ai.speak(`Sorry, you don't have any ${plant.name} seeds`);
-      }
-    } else {
-      ai.speak(`Sorry, you don't have any free plots`);
-    }
-  },
-  calcFinishTime: (plant, plot) => {
-    return (
-      Date.now() +
-      Math.round(plant.time * 1000 * 60 * Math.pow(0.95, plot.sprinkler))
-    );
-  },
-  harvest: plot => {
-    if (!plot) {
-      // harvest anything available
-      game.plots.forEach(p => {
-        if (p.timePlanted && p.planted) {
-          plotUtil.harvest(p);
-        }
-      });
-    } else {
-      if (plot.finish <= Date.now()) {
-        const plant = plantUtil.getPlant(plot.planted);
-        let amt = 10 + (plotUtil.fertilizer || 0); // base
-
-        invUtil.give(plot.planted, amt);
-
-        const hvt = {};
-        hvt[plot.planted] = amt;
-        plot.ready = false;
-        if (!plant.multipleHarvest) {
-          plot.timePlanted = null;
-          plot.finish = null;
-          plot.planted = null;
-        } else {
-          plot.finish = plotUtil.calcFinishTime(plant, plot);
-        }
-        return hvt;
-      }
-      return null;
-    }
-  },
-  reportSeeds: () => {
-    const seeds = Object.keys(game.inventory)
-      .filter(s => {
-        return s.includes("_seed") && game.inventory[s] > 0;
-      })
-      .map(s => {
-        return {
-          plant: s.split("_seed")[0],
-          amt: game.inventory[s]
-        };
-      });
-    return seeds;
-  },
-  process: () => {
-    const matured = {};
-    game.plots.forEach(p => {
-      if (p.planted && p.timePlanted && !p.ready) {
-        if (p.finish <= Date.now()) {
-          p.ready = true;
-          matured[p.planted] = true;
-        }
-      }
-    });
-
-    if (Object.keys(matured).length > 0) {
-      const arr = Object.keys(matured).map(p => {
-        return plantUtil.getPlant(p).pl;
-      });
-
-      ai.speak(`The ` + toList(arr) + ` are ready for harvesting!`);
-    }
-
-    setTimeout(() => {
-      plotUtil.process();
-    }, 100);
-  }
-};
 
 var cheatcode = "up up down down left right left right b a".split(" ");
 var cheatstate = 0;
@@ -261,111 +34,18 @@ function cost(color) {
   return amt;
 }
 
-var needUpdate = {
-  bg: true,
-  inkLevels: true
-};
-
-var entities = [
-  "seed",
-  "produce",
-  "plant",
-  "plot",
-  "sprinkler",
-  "fertilizer",
-  "morgan",
-  "sell",
-  "buy",
-  "multiple"
-];
-
-var grammar =
-  "#JSGF V1.0; grammar codewords; public <codewords> = " +
-  [
-    ...Object.keys(colors),
-    ...Object.keys(commands),
-    ...Object.keys(bigCommands),
-    ...entities,
-    ...entities.map(e => `${e}s`)
-  ].join(" | ") +
-  " ;";
-
 var diagnostic = document.querySelector(".output");
 var bg = document.querySelector("html");
 var hints = document.querySelector(".hints");
 var bubble = document.getElementById("speech-bubble");
+var localeSelector = document.getElementById("locale");
 
-var ink = {
-  red: 0,
-  green: 0,
-  blue: 0
-};
-var opacity = 1;
-var canPrestige = false;
-var maxInk = 2550;
-
-/*******Speech Recognition*********/
-if (SpeechRecognition) {
-  var recognition = new SpeechRecognition();
-  var speechRecognitionList = new SpeechGrammarList();
-  speechRecognitionList.addFromString(grammar, 1);
-  recognition.grammars = speechRecognitionList;
-  recognition.continuous = true;
-  recognition.lang = "en-US";
-  recognition.interimResults = false;
-  recognition.maxAlternatives = 10;
-
-  recognition.onresult = event => {
-    event.results;
-    var last = event.results.length - 1;
-    const alts = [];
-    for (let i = 0; i < event.results[last].length; i++) {
-      alts.push(event.results[last][i]);
-    }
-
-    const ts = alts.map(t => {
-      return parser.interpret(t.transcript, t.confidence);
-    });
-    ts.sort((a, b) => {
-      return b.matched - a.matched;
-    });
-
-    var text = ts[0].transcript;
-
-    diagnostic.textContent = "Command: " + text;
-    console.log(ts);
-    process(text);
-  };
-
-  recognition.onspeechend = function() {
-    setTimeout(() => {
-      listen();
-    }, 1000);
-    diagnostic.textContent = "...";
-  };
-
-  recognition.onnomatch = function(event) {
-    diagnostic.textContent = "Unrecognized text";
-    setTimeout(() => {
-      listen();
-    }, 1000);
-  };
-
-  recognition.onerror = function(event) {
-    if (event.error !== "not-allowed") {
-      setTimeout(() => {
-        listen();
-      }, 1000);
-    } else {
-      diagnostic.textContent = "Error occurred in recognition: " + event.error;
-    }
-  };
-} else {
-  diagnostic.textContent =
-    "Speech Recognition not detected. You will have to use Google Chrome on Desktop or Android, and you will have to allow the page to use your microphone.";
-
-  document.getElementById("testing").style.display = "block";
-}
+localeSelector.addEventListener("change", () => {
+  if (recognition) {
+    recognition.lang = localeSelector.value;
+    console.log('Set locale to', localeSelector.value);
+  }
+});
 
 /*******Speech Synthesis***********/
 
@@ -389,13 +69,18 @@ document.addEventListener("keydown", event => {
 // title screen
 var titleScreen = document.getElementById("title-screen");
 var startButton = document.getElementById("start");
+var continueButton = document.getElementById("continue");
 if (localStorage.getItem("save")) {
-  startButton.textContent = "Continue";
+  continueButton.style.display = "block";
 }
 
 startButton.addEventListener("click", () => {
   start();
 });
+continueButton.addEventListener("click", () => {
+  start(true);
+});
+
 
 /****State checking*********/
 
@@ -543,11 +228,11 @@ function setupSynth() {
   }
 }
 
-function start() {
+function start(load) {
   setupSynth();
   titleScreen.style.display = "none";
   // check localstorage
-  if (localStorage.getItem("save")) {
+  if (load && localStorage.getItem("save")) {
     game = JSON.parse(localStorage.getItem("save"));
   } else {
     ai.speak("Howdy! Welcome to Call of Farming!");
@@ -563,6 +248,7 @@ function start() {
     plotUtil.addPlot();
   }
 
+  listen();
   ai.process();
   plotUtil.process();
   taskUtil.process();
@@ -571,5 +257,4 @@ function start() {
 function save() {
   localStorage.setItem("save", JSON.stringify(game));
 }
-listen();
 update();

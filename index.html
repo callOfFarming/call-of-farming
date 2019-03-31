@@ -8,6 +8,7 @@
     <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.24.0/moment.min.js"></script>
 
     <script type="text/javascript" src="plants.js"></script>
+    <script type="text/javascript" src="inventory.js"></script>
     <script type="text/javascript" src="commands.js"></script>
     <script type="text/javascript" src="generalCommands.js"></script>
     <script type="text/javascript" src="ai.js"></script>
@@ -19,9 +20,20 @@
 
 <body>
     <div class="title-screen" id="title-screen">
-        <button id="start">Start</button>
+        <button id="start">Start New Game</button>
+        <button id="continue" style="display: none">Continue</button>
         <div>
             Turn up the sound, and allow the game to use your microphone
+        </div>
+        <div style="text-align: center; margin: 8px;">
+            <em>If you find the game has trouble understanding you, try changing your locale:</em><br>
+            <select id="locale">
+                <option value="en-US">US</option>
+                <option value="en-GB">UK</option>
+                <option value="en-CA">Canada</option>
+                <option value="en-AU">Australia</option>
+                <option value="en-HK">Hong Kong (experimental)</option>
+            </select>
         </div>
     </div>
     <div id="speech-bubble">
