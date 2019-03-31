@@ -1,6 +1,6 @@
 var plotUtil = {
   cost: () => {
-    const cost = Math.round(200 * Math.pow(1.2, game.plots.length - 1));
+    const cost = Math.round(200 * Math.pow(1.5, game.plots.length - 1));
     return cost;
   },
   buyPlot: () => {
@@ -21,6 +21,7 @@ var plotUtil = {
   },
   addPlot: () => {
     game.plots.push({
+      index: game.plots.length,
       planted: null,
       timePlanted: null,
       ready: false,
@@ -171,6 +172,7 @@ var plotUtil = {
         invUtil.pay(_p, 1);
       });
       plot.sprinkler++;
+      ai.speak(`Plot ${plot.index} now has level ${plot.sprinkler} sprinklers`);
     }
   }
 };

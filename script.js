@@ -234,6 +234,11 @@ function start(load) {
   // check localstorage
   if (load && localStorage.getItem("save")) {
     game = JSON.parse(localStorage.getItem("save"));
+
+    game.plots.forEach((p, i)=> {
+      p.index = i+1;
+    });
+
   } else {
     ai.speak("Howdy! Welcome to Call of Farming!");
     ai.speak(

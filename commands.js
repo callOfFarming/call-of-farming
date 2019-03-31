@@ -250,8 +250,11 @@ var commands = {
         }
         if (numUsed > 0) {
           text += `, ${numUsed} ${numUsed === 1 ? "is" : "are"} in use`;
+        }
 
-          ai.speak(text + ".");
+        text += `The next plot will cost ${plotUtil.cost()} bucks and 20 land.`;
+
+        if (numUsed > 0) {
           if (numUsed <= 5) {
             commands.list.fn("plants");
           } else {
@@ -259,8 +262,6 @@ var commands = {
               `If you would like a full list of currently growing plants, please say "list plants"`
             );
           }
-        } else {
-          ai.speak(text + ".");
         }
       } else if (e.includes("plant")) {
         const numUsed = game.plots.filter(p => p.planted).length;
@@ -423,9 +424,8 @@ var commands = {
   upgrade: {
     parameters: ["plot", "id"],
     similar: [],
-    fn: (plot, id, upgrade) => {
+    fn: (plot, id) => {
       if (plot.includes("plot")) {
-        // plot upgrade
         const ind = Number.parseInt(id, 10);
         if (isNaN(ind)) {
           return; // bad.
@@ -599,7 +599,7 @@ var tasks = {
           minDist: 100,
           maxDist: 250,
           size: 5,
-          fn: (silent) => {
+          fn: silent => {
             game.explored += 4;
             invUtil.give("radish_seed", 1);
             if (!silent) {
@@ -615,7 +615,7 @@ var tasks = {
           minDist: 120,
           maxDist: 350,
           size: 5,
-          fn: (silent) => {
+          fn: silent => {
             game.explored += 4;
             invUtil.give("kale_seed", 1);
             if (!silent) {
@@ -631,7 +631,7 @@ var tasks = {
           minDist: 150,
           maxDist: 450,
           size: 5,
-          fn: (silent) => {
+          fn: silent => {
             game.explored += 4;
             invUtil.give("corn_seed", 1);
             if (!silent) {
@@ -647,7 +647,7 @@ var tasks = {
           minDist: 150,
           maxDist: 450,
           size: 5,
-          fn: (silent) => {
+          fn: silent => {
             game.explored += 5;
             invUtil.give("corn_seed", 1);
             if (!silent) {
@@ -680,7 +680,7 @@ var tasks = {
           minDist: 250,
           maxDist: 1250,
           size: 2,
-          fn: (silent) => {
+          fn: silent => {
             game.explored += 4;
             invUtil.give("cabbage_seed", 1);
             if (!silent) {
@@ -691,7 +691,7 @@ var tasks = {
               cabbage_seed: 5
             };
           }
-        },
+        }
       ];
 
       const avail = lootTable.filter(l => {
