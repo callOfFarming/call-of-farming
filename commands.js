@@ -462,7 +462,7 @@ var tasks = {
     id: "explore",
     name: "exploring the area",
     describe: `takes 5 minutes, each time you explore a little further than before, and there is the chance of finding something new, or getting knocked out, so be careful...`,
-    time: 0.15,
+    time: 5,
     complete: silent => {
       const lootTable = [
         {
