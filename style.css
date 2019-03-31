@@ -157,3 +157,13 @@ ul {
     border-radius: 4px;
     font-size: 14px;
 }
+
+.discord {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    padding: 16px 16px;
+    z-index: 1;
+    font-size: 12px;
+    color: rgb(34, 34, 53);
+}
