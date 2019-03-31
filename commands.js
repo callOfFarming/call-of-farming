@@ -226,7 +226,7 @@ var commands = {
       if (game.currentTask) {
         ai.speak(
           `You are currently ${
-            tasks[game.currentTask.id]
+            tasks[game.currentTask.id].name
           }, next check-in is ${moment(game.currentTask.finish).fromNow()}`
         );
       }
@@ -462,7 +462,7 @@ var tasks = {
     id: "explore",
     name: "exploring the area",
     describe: `takes 5 minutes, each time you explore a little further than before, and there is the chance of finding something new, or getting knocked out, so be careful...`,
-    time: 5,
+    time: 0.15,
     complete: silent => {
       const lootTable = [
         {
@@ -734,9 +734,9 @@ const taskUtil = {
       // is the current task done?
       if (game.currentTask.finish <= Date.now()) {
         // check how many times it could have been done
-        const task = tasks[game.currentTask];
+        const task = tasks[game.currentTask.id];
         const times = Math.floor(
-          (Date.now() - game.currentTask.started) / (task.time * 1000)
+          (Date.now() - game.currentTask.started) / (task.time * 60 * 1000)
         );
         if (times > 1) {
           tasks[game.currentTask.id].complete(true);
