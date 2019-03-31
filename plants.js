@@ -46,7 +46,7 @@ var plants = {
   corn: {
     name: "Corn",
     pl: "Corns",
-    price: 130,
+    price: 120,
     time: 15,
     maxHarvest: 3,
     season: "summer"
@@ -54,22 +54,23 @@ var plants = {
   sunflower: {
     name: "Sunflower",
     pl: "Sunflowers",
-    price: 50,
-    time: 25,
+    price: 150,
+    time: 45,
     season: "summer"
   },
   grape: {
     name: "Grape",
     pl: "Grapes",
-    price: 60,
-    time: 18,
+    price: 160,
+    maxHarvest: 3,
+    time: 30,
     season: "autumn"
   },
   pumpkin: {
     name: "Pumpkin",
     pl: "Pumpkins",
-    price: 40,
-    time: 20,
+    price: 640,
+    time: 120,
     season: "autumn"
   }
 };

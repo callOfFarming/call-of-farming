@@ -565,7 +565,7 @@ var tasks = {
         {
           minDist: 40,
           maxDist: 400,
-          size: 1,
+          size: 15,
           fn: silent => {
             game.explored += 5;
             invUtil.give("tulip", 10);
@@ -580,17 +580,18 @@ var tasks = {
         },
         {
           minDist: 100,
-          maxDist: 250,
-          size: 5,
-          fn: () => {
+          maxDist: 300,
+          size: 15,
+          fn: silent => {
             game.explored += 5;
-            invUtil.give("radish_seed", 1);
+            game.money += 100;
             if (!silent) {
-              ai.speak(`You found a packet of Radish seeds while exploring.`);
+              ai.speak("You found 100 bucks exploring! Go you!");
             }
+
             return {
               explored: 5,
-              radish_seed: 5
+              money: 100
             };
           }
         },
@@ -598,23 +599,55 @@ var tasks = {
           minDist: 100,
           maxDist: 250,
           size: 5,
-          fn: () => {
-            game.explored += 5;
+          fn: (silent) => {
+            game.explored += 4;
+            invUtil.give("radish_seed", 1);
+            if (!silent) {
+              ai.speak(`You found a packet of Radish seeds while exploring.`);
+            }
+            return {
+              explored: 4,
+              radish_seed: 5
+            };
+          }
+        },
+        {
+          minDist: 120,
+          maxDist: 350,
+          size: 5,
+          fn: (silent) => {
+            game.explored += 4;
             invUtil.give("kale_seed", 1);
             if (!silent) {
               ai.speak(`You found a packet of Kale seeds while exploring.`);
             }
             return {
-              explored: 5,
+              explored: 4,
               kale_seed: 5
             };
           }
         },
         {
           minDist: 150,
-          maxDist: 350,
-          size: 10,
-          fn: () => {
+          maxDist: 450,
+          size: 5,
+          fn: (silent) => {
+            game.explored += 4;
+            invUtil.give("corn_seed", 1);
+            if (!silent) {
+              ai.speak(`You found a packet of Corn seeds while exploring.`);
+            }
+            return {
+              explored: 4,
+              corn_seed: 5
+            };
+          }
+        },
+        {
+          minDist: 150,
+          maxDist: 450,
+          size: 5,
+          fn: (silent) => {
             game.explored += 5;
             invUtil.give("corn_seed", 1);
             if (!silent) {
@@ -625,7 +658,40 @@ var tasks = {
               corn_seed: 5
             };
           }
-        }
+        },
+        {
+          minDist: 300,
+          maxDist: 500,
+          size: 15,
+          fn: silent => {
+            game.explored += 4;
+            game.money += 300;
+            if (!silent) {
+              ai.speak("You found 300 bucks exploring! Go you!");
+            }
+
+            return {
+              explored: 4,
+              money: 100
+            };
+          }
+        },
+        {
+          minDist: 250,
+          maxDist: 1250,
+          size: 2,
+          fn: (silent) => {
+            game.explored += 4;
+            invUtil.give("cabbage_seed", 1);
+            if (!silent) {
+              ai.speak(`You found a packet of Cabbage seeds while exploring.`);
+            }
+            return {
+              explored: 4,
+              cabbage_seed: 5
+            };
+          }
+        },
       ];
 
       const avail = lootTable.filter(l => {
