@@ -1,26 +1,3 @@
-var upgrades = {
-  sprinkler: [
-    {
-      name: "Basic Sprinkler",
-      parts: {
-        basic_nozzle: 1,
-        basic_hose: 1,
-        basic_drum: 1,
-        basic_pump: 1
-      }
-    },
-    {
-      name: "Reliable Sprinkler",
-      parts: {
-        reliable_nozzle: 1,
-        reliable_hose: 1,
-        reliable_drum: 1,
-        reliable_pump: 1
-      }
-    }
-  ]
-};
-
 var plotUtil = {
   cost: () => {
     const cost = Math.round(200 * Math.pow(1.2, game.plots.length - 1));
@@ -35,9 +12,9 @@ var plotUtil = {
       plotUtil.addPlot();
 
       return {
-          land: land,
-          cost: cost
-      }
+        land: land,
+        cost: cost
+      };
     }
 
     return null;
@@ -168,5 +145,22 @@ var plotUtil = {
     setTimeout(() => {
       plotUtil.process();
     }, 100);
+  },
+  upgrade: plot => {
+    const up = plot.sprinkler + 1;
+    const s = upgrades.sprinkler;
+    const parts = s.parts;
+    if (
+      parts.every(p => {
+        const _p = _p + "_" + up;
+        return game.inventory[_p] && game.inventory[_p] > 0;
+      })
+    ) {
+      parts.forEach(p => {
+        const _p = _p + "_" + up;
+        invUtil.pay(_p, 1);
+      });
+      plot.sprinkler++;
+    }
   }
 };

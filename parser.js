@@ -72,6 +72,14 @@ const parser = {
     let arr = [];
     let t = transcript.trim().toLowerCase();
     t = t.replace(/\'/g, "");
+    const common_mistakes = {
+        "plot to":"plot 2"
+    }
+
+    Object.keys(common_mistakes).forEach((needle)=> {
+        t.replace(needle, common_mistakes[needle]);
+    });
+    
     const parts = t.split(" ");
     parts.forEach(p => {
       if (parser.plant(p)) {

@@ -7,7 +7,7 @@ const quantities = {
   2: {
     name: "2",
     pl: "2",
-    similar: ["to", "two", "too"]
+    similar: ["two", "too"]
   },
   3: {
     name: "3",
@@ -68,6 +68,11 @@ const quantities = {
     name: "14",
     pl: "14",
     similar: ["fourteen", "fourteenth", "14th"]
+  },
+  15: {
+      name: "15",
+      pl: "15",
+      similar: ["fifteen", "fifteenth", "15th"]
   }
 };
 

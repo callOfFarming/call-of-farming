@@ -101,6 +101,8 @@ var commands = {
       if (plant) {
         if (amt === "all" || amt.includes("max")) {
           amt = game.inventory[plant.id] || 0;
+        } else if (amt === "an" || amt === "a") {
+          amt = 1;
         } else {
           amt = Number.parseInt(amt, 10);
         }
@@ -113,7 +115,11 @@ var commands = {
               } for ${sold} buck${sold === 1 ? "aroo" : "s"}`
             );
           } else {
-            ai.speak(`Sorry you do not have ${amt} ${plant.pl} to sell`);
+            ai.speak(`Sorry, you do not have ${amt} ${plant.pl} to sell`);
+          }
+        } else {
+          if(!game.inventory[plant.id]){
+            ai.speak(`Sorry, you do not have any ${plant.pl} to sell`);
           }
         }
       }
@@ -130,29 +136,41 @@ var commands = {
     parameters: ["amt|'plot'", "plant"],
     similar: ["purchase"],
     fn: (amt, p) => {
-      if(amt.includes('plot') || p.includes('plot')){
+      if (amt.includes("plot") || p.includes("plot")) {
         // buying a plot
         const bought = plotUtil.buyPlot();
-        if(bought){
-          ai.speak(`Bought a plot for ${bought.cost} bucks and ${bought.land} land.`)
+        if (bought) {
+          ai.speak(
+            `Bought a plot for ${bought.cost} bucks and ${bought.land} land.`
+          );
         } else {
           const cost = plotUtil.cost();
           const canAfford = game.money >= cost;
           const haveLand = game.land >= 20;
-          let text = `You couldn't afford to buy a plot.`
-          if(!canAfford){
-            text+= ` You have ${game.money} buck${game.money > 1 ? 's':'aroo'}, but needed ${cost} bucks.`
+          let text = `You couldn't afford to buy a plot.`;
+          if (!canAfford) {
+            text += ` You have ${game.money} buck${
+              game.money > 1 ? "s" : "aroo"
+            }, but needed ${cost} bucks.`;
           }
-          if(!haveLand){
-            text += ` You have ${game.land} land, but need 20 units of undeveloped land.`
+          if (!haveLand) {
+            text += ` You have ${
+              game.land
+            } land, but need 20 units of undeveloped land.`;
           }
           ai.speak(text);
         }
         return;
       }
 
+      // check if amt was ignored
+      let plant = plantUtil.getPlant(amt);
+      if (plant) {
+        amt = "1";
+      } else {
+        plant = plantUtil.getPlant(p);
+      }
 
-      const plant = plantUtil.getPlant(p);
       if (!plant) {
         return;
       }
@@ -162,6 +180,8 @@ var commands = {
 
       if (amt === "all" || amt.includes("max")) {
         amt = game.money / seedPrice;
+      } else if (amt === "an" || amt === "a") {
+        amt = 1;
       } else {
         amt = parser.number(amt);
         if (amt === null) {
@@ -195,6 +215,13 @@ var commands = {
       } plot${game.plots.length > 1 ? "s" : ""}, 
       and ${game.land} unit${game.land > 1 ? "s" : ""} of undeveloped land.`);
       ai.speak(`You have explored ${game.explored} units of distance so far.`);
+      if (game.currentTask) {
+        ai.speak(
+          `You are currently ${
+            tasks[game.currentTask.id]
+          }, next check-in is ${moment(game.currentTask.finish).fromNow()}`
+        );
+      }
     }
   },
   list: {
@@ -376,6 +403,26 @@ var commands = {
         }, and ${seeds} ${plant.name} seed${seeds > 1 ? "s" : ""}`);
       }
     }
+  },
+  upgrade: {
+    parameters: ["plot", "id"],
+    similar: [],
+    fn: (plot, id, upgrade) => {
+      if (plot.includes("plot")) {
+        // plot upgrade
+        const ind = Number.parseInt(id, 10);
+        if (isNaN(ind)) {
+          return; // bad.
+        }
+
+        if (ind < 0 || ind >= game.plots.length) {
+          return; // bad.
+        }
+
+        const plot = game.plots[ind];
+        plotUtil.upgrade(plot);
+      }
+    }
   }
 };
 
@@ -383,12 +430,15 @@ var tasks = {
   "clear land": {
     id: "clear land",
     name: "clearing land",
-    describe: `only takes 2 minutes, but will clear up some land so you can construct additional plots`,
-    time: 2,
+    describe: `only takes a few minutes, but will clear up some land so you can construct additional plots`,
+    time: 3,
     complete: () => {
-      game.land += 5;
+      const land = Math.round(Math.random() * 5 + 3);
+      game.land += land;
       ai.speak(
-        `You cleared 5 units of land, you now have ${game.land} units of land.`
+        `You cleared ${land} units of land, you now have ${
+          game.land
+        } units of land.`
       );
     }
   },
@@ -397,25 +447,53 @@ var tasks = {
     name: "exploring the area",
     describe: `takes 5 minutes, each time you explore a little further than before, and there is the chance of finding something new, or getting knocked out, so be careful...`,
     time: 5,
-    complete: () => {
+    complete: silent => {
       const lootTable = [
         {
           minDist: 0,
-          maxDist: 1000,
-          size: 50,
+          maxDist: 10000,
+          size: 20,
           fn: () => {
             game.explored += 5;
-            ai.speak("You came back empty handed. Oh well.");
+            if (!silent) {
+              ai.speak("You came back empty handed. Oh well.");
+            }
+            return {
+              explored: 5
+            };
           }
         },
         {
           minDist: 0,
-          maxDist: 30,
+          maxDist: 100,
           size: 5,
           fn: () => {
             game.explored += 5;
             game.money += 20;
-            ai.speak("You found 20 bucks exploring! Go you!");
+            if (!silent) {
+              ai.speak("You found 20 bucks exploring! Go you!");
+            }
+
+            return {
+              explored: 5,
+              money: 20
+            };
+          }
+        },
+        {
+          minDist: 0,
+          maxDist: 50,
+          size: 30,
+          fn: () => {
+            game.explored += 5;
+            invUtil.give("potato", 5);
+            if (!silent) {
+              ai.speak(`You found 5 potatoes while exploring.`);
+            }
+            return {
+              explored: 5,
+              potato: 5
+            };
           }
         },
         {
@@ -479,8 +557,18 @@ const taskUtil = {
     if (game.currentTask) {
       // is the current task done?
       if (game.currentTask.finish <= Date.now()) {
-        tasks[game.currentTask.id].complete();
-        delete game.currentTask;
+        // check how many times it could have been done
+        const task = tasks[game.currentTask];
+        const times = Math.floor(
+          (Date.now() - game.currentTask.started) / (task.time * 1000)
+        );
+        if (times > 1) {
+          tasks[game.currentTask.id].complete(true);
+        } else {
+          tasks[game.currentTask.id].complete();
+        }
+
+        taskUtil.startTask(game.currentTask.id, true);
       }
     }
 
@@ -488,7 +576,7 @@ const taskUtil = {
       taskUtil.process();
     }, 100);
   },
-  startTask: id => {
+  startTask: (id, silent) => {
     taskUtil.cancel();
     game.currentTask = {
       id: id,
@@ -496,11 +584,13 @@ const taskUtil = {
       finish: tasks[id].time * 1000 * 60 + Date.now()
     };
 
-    ai.speak(
-      `Work work work. You are now ${tasks[id].name}, you will be done ${moment(
-        game.currentTask.finish
-      ).fromNow()}. You may cancel this task by saying "cancel task" or issue a new task.`
-    );
+    if (!silent) {
+      ai.speak(
+        `Work work work. You are now ${tasks[id].name}, you will return every ${
+          tasks[id].time
+        } minutes. You may cancel this task by saying "cancel task" or issue a new task.`
+      );
+    }
   },
   cancel: () => {
     delete game.currentTask;
