@@ -50,12 +50,17 @@ var commands = {
           const h = plotUtil.harvest(plot);
           if (h) {
             ai.speak(`Harvested ${toList(itemize(h))} from Plot ${index + 1}.`);
-            if (plant.multipleHarvests) {
-              ai.speak(
-                `${plant.pl} will be ready for another harvesting in ${
-                  plant.time
-                } minutes`
-              );
+            if (plant.maxHarvest > 1) {
+              if(plot.harvests > 0){
+                ai.speak(
+                  `${plant.pl} will be ready for another harvesting in ${
+                    plant.time
+                  } minutes`
+                );
+              } else {
+                ai.speak(`${plant.pl} will have to be replanted now since it has reached the end of its growth cycle`);
+              }
+              
             }
             count++;
           }
@@ -393,8 +398,8 @@ var commands = {
             plant.time
           } days to mature.`
         );
-        if (plant.multipleHarvests) {
-          ai.speak(`${plant.pl} do not have to be replanted after harvest`);
+        if (plant.maxHarvest > 1) {
+          ai.speak(`${plant.pl} can be harvested ${plant.maxHarvest} times before needing replanting`);
         }
 
         ai.speak(`${plant.name} currently sells for ${plant.price} bucks each. 
@@ -515,7 +520,23 @@ var tasks = {
             invUtil.give("garlic_seed", 1);
             ai.speak("You found a packet of garlic seeds while exploring!");
           }
-        }
+        },
+        {
+          minDist: 100,
+          maxDist: 250,
+          size: 30,
+          fn: () => {
+            game.explored += 5;
+            invUtil.give("radish", 5);
+            if (!silent) {
+              ai.speak(`You found 5 potatoes while exploring.`);
+            }
+            return {
+              explored: 5,
+              potato: 5
+            };
+          }
+        },
       ];
 
       const avail = lootTable.filter(l => {

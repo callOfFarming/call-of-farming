@@ -57,6 +57,9 @@ var plotUtil = {
         plot.planted = plant.id;
         plot.timePlanted = Date.now();
         plot.finish = plotUtil.calcFinishTime(plant, plot);
+        if (plant.maxHarvest > 1) {
+          plot.harvest = plant.maxHarvest;
+        }
 
         ai.speak(
           `${plant.pl} planted, they will be ready in ${plant.time} minutes`
@@ -93,12 +96,19 @@ var plotUtil = {
         const hvt = {};
         hvt[plot.planted] = amt;
         plot.ready = false;
-        if (!plant.multipleHarvest) {
+        if (!plant.maxHarvest || plant.maxHarvest === 1) {
           plot.timePlanted = null;
           plot.finish = null;
           plot.planted = null;
         } else {
-          plot.finish = plotUtil.calcFinishTime(plant, plot);
+          plot.harvest--;
+          if (plot.harvest > 0) {
+            plot.finish = plotUtil.calcFinishTime(plant, plot);
+          } else {
+            plot.timePlanted = null;
+            plot.finish = null;
+            plot.planted = null;
+          }
         }
         return hvt;
       }

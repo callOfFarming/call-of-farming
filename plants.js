@@ -4,8 +4,8 @@ var plants = {
     pl: "Garlics",
     price: 50,
     time: 3,
+    maxHarvest: 4,
     season: "spring",
-    multipleHarvest: true
   },
   kale: {
     name: "Kale",
@@ -100,8 +100,8 @@ var plantUtil = {
     if (!plant) {
       return 0;
     } else {
-      if (plant.multipleHarvest) {
-        return plant.price * 10;
+      if (plant.maxHarvest > 1) {
+        return plant.price * 3 * plant.maxHarvest;
       } else {
         return plant.price * 5;
       }
