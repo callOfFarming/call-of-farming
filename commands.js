@@ -51,16 +51,19 @@ var commands = {
           if (h) {
             ai.speak(`Harvested ${toList(itemize(h))} from Plot ${index + 1}.`);
             if (plant.maxHarvest > 1) {
-              if(plot.harvests > 0){
+              if (plot.harvests > 0) {
                 ai.speak(
                   `${plant.pl} will be ready for another harvesting in ${
                     plant.time
                   } minutes`
                 );
               } else {
-                ai.speak(`${plant.pl} will have to be replanted now since it has reached the end of its growth cycle`);
+                ai.speak(
+                  `${
+                    plant.pl
+                  } will have to be replanted now since it has reached the end of its growth cycle`
+                );
               }
-              
             }
             count++;
           }
@@ -123,7 +126,7 @@ var commands = {
             ai.speak(`Sorry, you do not have ${amt} ${plant.pl} to sell`);
           }
         } else {
-          if(!game.inventory[plant.id]){
+          if (!game.inventory[plant.id]) {
             ai.speak(`Sorry, you do not have any ${plant.pl} to sell`);
           }
         }
@@ -241,14 +244,14 @@ var commands = {
         const numEmpty = game.plots.filter(p => !p.planted).length;
         const numUsed = game.plots.filter(p => p.planted).length;
 
-        let text = `You have ${numPlots} plot${numPlots === 1 ? "" : "s"}.`;
+        let text = `You have ${numPlots} plot${numPlots === 1 ? "" : "s"}`;
         if (numEmpty > 0) {
-          text += ` ${numEmpty} ${numEmpty === 1 ? "is" : "are"} unused.`;
+          text += `, ${numEmpty} ${numEmpty === 1 ? "is" : "are"} unused`;
         }
         if (numUsed > 0) {
-          text += ` ${numUsed} ${numUsed === 1 ? "is" : "are"} in use.`;
+          text += `, ${numUsed} ${numUsed === 1 ? "is" : "are"} in use`;
 
-          ai.speak(text);
+          ai.speak(text+'.');
           if (numUsed <= 5) {
             commands.list.fn("plants");
           } else {
@@ -257,7 +260,7 @@ var commands = {
             );
           }
         } else {
-          ai.speak(text);
+          ai.speak(text+'.');
         }
       } else if (e.includes("plant")) {
         const numUsed = game.plots.filter(p => p.planted).length;
@@ -284,11 +287,15 @@ var commands = {
               const plant = plantUtil.getPlant(plot.planted);
               const mature = plot.finish;
               if (mature > Date.now()) {
-                ai.speak(
-                  `Plot ${index + 1} is growing ${
-                    plant.pl
-                  }, they will be ready ${moment(mature).fromNow()}.`
-                );
+                let text = `Plot ${index + 1} is growing ${
+                  plant.pl
+                }, they will be ready ${moment(mature).fromNow()}.`;
+                if (plot.harvest && plot.harvest > 0) {
+                  text += ` They can be harvested ${plot.harvest} more time${
+                    plot.harvest > 1 ? "s" : ""
+                  }`;
+                }
+                ai.speak(text);
               }
             }
           });
@@ -399,7 +406,11 @@ var commands = {
           } days to mature.`
         );
         if (plant.maxHarvest > 1) {
-          ai.speak(`${plant.pl} can be harvested ${plant.maxHarvest} times before needing replanting`);
+          ai.speak(
+            `${plant.pl} can be harvested ${
+              plant.maxHarvest
+            } times before needing replanting`
+          );
         }
 
         ai.speak(`${plant.name} currently sells for ${plant.price} bucks each. 
@@ -536,7 +547,7 @@ var tasks = {
               potato: 5
             };
           }
-        },
+        }
       ];
 
       const avail = lootTable.filter(l => {
@@ -607,9 +618,7 @@ const taskUtil = {
 
     if (!silent) {
       ai.speak(
-        `Work work work. You are now ${tasks[id].name}, you will return every ${
-          tasks[id].time
-        } minutes. You may cancel this task by saying "cancel task" or issue a new task.`
+        `Work work work. You are now ${tasks[id].name}, you will check-in every ${tasks[id].time} minutes. If you found anythingg during the task, it will be deposited at check-in. You may cancel this task by saying "cancel task".`
       );
     }
   },

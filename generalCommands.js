@@ -61,5 +61,9 @@ var bigCommands = {
   },
   "go explore": () => {
     taskUtil.startTask("explore");
+  },
+  "save": () => {
+    save();
+    ai.speak('Game saved');
   }
 };

@@ -106,6 +106,10 @@ const tools = {
   price: {
     name: "price",
     similar: ["prices", "pies", "plies", "pry", "pries"]
+  },
+  save: {
+      name: "save",
+      similar: ["safe", "face", "faith", "fade"]
   }
 };
 
