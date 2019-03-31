@@ -26,27 +26,29 @@ var plants = {
     pl: "Tulips",
     price: 30,
     time: 15,
+    maxHarvest: 3,
     season: "spring"
   },
   radish: {
     name: "Radish",
     pl: "Radishes",
-    price: 25,
+    price: 250,
     time: 10,
     season: "summer"
   },
   cabbage: {
     name: "Cabbage",
     pl: "Cabbages",
-    price: 40,
+    price: 1400,
     time: 20,
     season: "summer"
   },
   corn: {
     name: "Corn",
     pl: "Corns",
-    price: 30,
+    price: 130,
     time: 15,
+    maxHarvest: 3,
     season: "summer"
   },
   sunflower: {

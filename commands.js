@@ -251,7 +251,7 @@ var commands = {
         if (numUsed > 0) {
           text += `, ${numUsed} ${numUsed === 1 ? "is" : "are"} in use`;
 
-          ai.speak(text+'.');
+          ai.speak(text + ".");
           if (numUsed <= 5) {
             commands.list.fn("plants");
           } else {
@@ -260,7 +260,7 @@ var commands = {
             );
           }
         } else {
-          ai.speak(text+'.');
+          ai.speak(text + ".");
         }
       } else if (e.includes("plant")) {
         const numUsed = game.plots.filter(p => p.planted).length;
@@ -469,7 +469,7 @@ var tasks = {
           minDist: 0,
           maxDist: 10000,
           size: 20,
-          fn: () => {
+          fn: silent => {
             game.explored += 5;
             if (!silent) {
               ai.speak("You came back empty handed. Oh well.");
@@ -483,7 +483,7 @@ var tasks = {
           minDist: 0,
           maxDist: 100,
           size: 5,
-          fn: () => {
+          fn: silent => {
             game.explored += 5;
             game.money += 20;
             if (!silent) {
@@ -500,7 +500,7 @@ var tasks = {
           minDist: 0,
           maxDist: 50,
           size: 30,
-          fn: () => {
+          fn: silent => {
             game.explored += 5;
             invUtil.give("potato", 5);
             if (!silent) {
@@ -516,35 +516,113 @@ var tasks = {
           minDist: 30,
           maxDist: 1000,
           size: 1,
-          fn: () => {
+          fn: silent => {
             game.explored += 5;
             invUtil.give("potato_seed", 1);
-            ai.speak("You found a packet of potato seeds while exploring!");
+            if (!silent) {
+              ai.speak("You found a packet of potato seeds while exploring!");
+            }
+            return {
+              explored: 5,
+              potato_seed: 5
+            };
           }
         },
         {
           minDist: 40,
-          maxDist: 1000,
+          maxDist: 200,
           size: 1,
-          fn: () => {
+          fn: silent => {
             game.explored += 5;
             invUtil.give("garlic_seed", 1);
-            ai.speak("You found a packet of garlic seeds while exploring!");
+            if (!silent) {
+              ai.speak("You found a packet of garlic seeds while exploring!");
+            }
+
+            return {
+              explored: 5,
+              garlic_seed: 5
+            };
+          }
+        },
+        {
+          minDist: 40,
+          maxDist: 200,
+          size: 10,
+          fn: silent => {
+            game.explored += 5;
+            invUtil.give("garlic", 15);
+            if (!silent) {
+              ai.speak("You found 15 garlics while exploring!");
+            }
+
+            return {
+              explored: 5,
+              garlic: 15
+            };
+          }
+        },
+        {
+          minDist: 40,
+          maxDist: 400,
+          size: 1,
+          fn: silent => {
+            game.explored += 5;
+            invUtil.give("tulip", 10);
+            if (!silent) {
+              ai.speak("You found 10 tulips while exploring!");
+            }
+            return {
+              explored: 5,
+              tulip: 10
+            };
           }
         },
         {
           minDist: 100,
           maxDist: 250,
-          size: 30,
+          size: 5,
           fn: () => {
             game.explored += 5;
-            invUtil.give("radish", 5);
+            invUtil.give("radish_seed", 1);
             if (!silent) {
-              ai.speak(`You found 5 potatoes while exploring.`);
+              ai.speak(`You found a packet of Radish seeds while exploring.`);
             }
             return {
               explored: 5,
-              potato: 5
+              radish_seed: 5
+            };
+          }
+        },
+        {
+          minDist: 100,
+          maxDist: 250,
+          size: 5,
+          fn: () => {
+            game.explored += 5;
+            invUtil.give("kale_seed", 1);
+            if (!silent) {
+              ai.speak(`You found a packet of Kale seeds while exploring.`);
+            }
+            return {
+              explored: 5,
+              kale_seed: 5
+            };
+          }
+        },
+        {
+          minDist: 150,
+          maxDist: 350,
+          size: 10,
+          fn: () => {
+            game.explored += 5;
+            invUtil.give("corn_seed", 1);
+            if (!silent) {
+              ai.speak(`You found a packet of Corn seeds while exploring.`);
+            }
+            return {
+              explored: 5,
+              corn_seed: 5
             };
           }
         }
@@ -618,7 +696,11 @@ const taskUtil = {
 
     if (!silent) {
       ai.speak(
-        `Work work work. You are now ${tasks[id].name}, you will check-in every ${tasks[id].time} minutes. If you found anythingg during the task, it will be deposited at check-in. You may cancel this task by saying "cancel task".`
+        `Work work work. You are now ${
+          tasks[id].name
+        }, you will check-in every ${
+          tasks[id].time
+        } minutes. If you found anythingg during the task, it will be deposited at check-in. You may cancel this task by saying "cancel task".`
       );
     }
   },
