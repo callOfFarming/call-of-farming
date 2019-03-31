@@ -133,3 +133,27 @@ ul {
 #continue {
     background: #ded;
 }
+
+.title {
+    font-size: 36px;
+    height: 30vh;
+    display: flex;
+    align-items: center;
+}
+
+.note {
+    position: fixed;
+    bottom: 0;
+    font-size: 12px;
+    padding: 16px 0;
+    opacity: 0.8;
+}
+
+.warn {
+    padding: 4px 8px;
+    margin: 4px;
+    border: solid 1px rgb(145, 115, 60);
+    background:  rgb(236, 236, 167);
+    border-radius: 4px;
+    font-size: 14px;
+}

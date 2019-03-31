@@ -1,11 +1,13 @@
-<!doctype html>
+<!DOCTYPE html>
 <html>
-
-<head>
+  <head>
     <title>Call of Farming</title>
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="style.css" />
 
-    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.24.0/moment.min.js"></script>
+    <script
+      type="text/javascript"
+      src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.24.0/moment.min.js"
+    ></script>
 
     <script type="text/javascript" src="plants.js"></script>
     <script type="text/javascript" src="inventory.js"></script>
@@ -17,60 +19,87 @@
     <script type="text/javascript" src="entities.js"></script>
     <script type="text/javascript" src="parser.js"></script>
     <script type="text/javascript" src="upgrades.js"></script>
-</head>
+  </head>
 
-<body>
+  <body>
     <div class="title-screen" id="title-screen">
-        <button id="start">Start New Game</button>
-        <button id="continue" style="display: none">Continue</button>
-        <div>
-            Turn up the sound, and allow the game to use your microphone
-        </div>
-        <div style="text-align: center; margin: 8px;">
-            <em>If you find the game has trouble understanding you, try changing your locale:</em><br>
-            <select id="locale">
-                <option value="en-US">US</option>
-                <option value="en-GB">UK</option>
-                <option value="en-CA">Canada</option>
-                <option value="en-AU">Australia</option>
-                <option value="en-HK">Hong Kong (experimental)</option>
-            </select>
-        </div>
-    </div>
-    <div id="speech-bubble">
+      <div class="title">Call of Farming</div>
+      <div class="warn">
+        This game has sounds, and uses your microphone.
+      </div>
+      <button id="start">Start New Game</button>
+      <button id="continue" style="display: none">Continue</button>
 
+      <div style="text-align: center; margin: 8px;">
+        <em
+          >If you find the game has trouble understanding you, try changing your
+          locale:</em
+        ><br />
+        <select id="locale">
+          <option value="en-US">US</option>
+          <option value="en-GB">UK</option>
+          <option value="en-CA">Canada</option>
+          <option value="en-AU">Australia</option>
+          <option value="en-HK">Hong Kong (experimental)</option>
+        </select>
+      </div>
+      <div class="note">
+        "Happy April 1st!" - dSolver
+      </div>
     </div>
+    <div id="speech-bubble"></div>
 
     <p class="output"><em>loading...</em></p>
 
     <div class="pane">
-        <p class="commands" id="commands">
-            <b>Here are some things you can ask of me:</b><br>
-            Say <b>"Stop"</b> and I will stop talking right away.<br>
-            Say <b>"what can I plant"</b> to get a list of the seeds you have available.<br>
-            Say <b>"current task"</b> and I will tell you what you are currently doing, presumably asking me dumb questions.<br>
-            Say <b>"current date"</b> to get the number of days since you've arrived, because you so desperately want to escape.<br>
-            There are some additional actions you can do with your plots and plants:<br>
-            Say <b>"Harvest"</b> to harvest all the plots ready for harvesting.<br>
-            Say <b>"Plant potato"</b> and one packet of your potato seeds if you have any will be used on a free plot if you have any.<br>
-            Say <b>"Sell 4 potatoes"</b> and I will take 4 potatoes from you if you have enough, and give you buckaroos for the produce.<br>
-            Say <b>"Buy 2 potato seeds"</b> and I will take your money if you have enough, and give you 2 packets of potato seeds.<br>
-            You can ask about price of things too:
-            Say <b>"Look up seed prices"</b> for a list of which seeds are currently available to buy and their respective prices.<br>
-            Say <b>"Look up produce prices"</b> for a list of produce currently available to sell and their respective prices.<br>
-            You can inquire about what you currently have:<br>
-            Say <b>"List plots"</b> for a list of your plots<br>
-            Say <b>"List produce"</b> for a list of what produce you are carrying (hint, you can sell them)<br>
-            
-        </p>
-        <p class="hints">
-            Try playing this game with the speaker on, and don't look!
-        </p>
-        
+      <p class="commands" id="commands">
+        <b>Here are some things you can ask of me:</b><br />
+        Say <b>"Stop"</b> and I will stop talking right away.<br />
+        Say <b>"what can I plant"</b> to get a list of the seeds you have
+        available.<br />
+        Say <b>"current task"</b> and I will tell you what you are currently
+        doing, presumably asking me dumb questions.<br />
+        Say <b>"current date"</b> to get the number of days since you've
+        arrived, because you so desperately want to escape.<br />
+        There are some additional actions you can do with your plots and
+        plants:<br />
+        Say <b>"Harvest"</b> to harvest all the plots ready for harvesting.<br />
+        Say <b>"Plant potato"</b> and one packet of your potato seeds if you
+        have any will be used on a free plot if you have any.<br />
+        Say <b>"Sell 4 potatoes"</b> and I will take 4 potatoes from you if you
+        have enough, and give you buckaroos for the produce.<br />
+        Say <b>"Buy 2 potato seeds"</b> and I will take your money if you have
+        enough, and give you 2 packets of potato seeds.<br />
+        You can ask about price of things too: Say
+        <b>"Look up seed prices"</b> for a list of which seeds are currently
+        available to buy and their respective prices.<br />
+        Say <b>"Look up produce prices"</b> for a list of produce currently
+        available to sell and their respective prices.<br />
+        You can inquire about what you currently have:<br />
+        Say <b>"List plots"</b> for a list of your plots<br />
+        Say <b>"List produce"</b> for a list of what produce you are carrying
+        (hint, you can sell them)<br />
+      </p>
+      <p class="hints">
+        Try playing this game with the speaker on, and don't look!
+      </p>
     </div>
 
-
     <script type="text/javascript" src="script.js"></script>
-</body>
 
+    <!-- Global site tag (gtag.js) - Google Analytics -->
+    <script
+      async
+      src="https://www.googletagmanager.com/gtag/js?id=UA-12428009-13"
+    ></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag() {
+        dataLayer.push(arguments);
+      }
+      gtag("js", new Date());
+
+      gtag("config", "UA-12428009-13");
+    </script>
+  </body>
 </html>

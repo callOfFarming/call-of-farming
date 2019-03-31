@@ -79,7 +79,7 @@ const parser = {
     Object.keys(common_mistakes).forEach((needle)=> {
         t.replace(needle, common_mistakes[needle]);
     });
-    
+
     const parts = t.split(" ");
     parts.forEach(p => {
       if (parser.plant(p)) {
@@ -201,9 +201,10 @@ if (SpeechRecognition) {
     }
   };
 } else {
-  diagnostic.textContent =
-    "Speech Recognition not detected. You will have to use Google Chrome on Desktop or Android, and you will have to allow the page to use your microphone.";
-
-  document.getElementById("testing").style.display = "block";
+    setTimeout(()=> {
+        diagnostic.textContent =
+        "Speech Recognition not detected. You will have to use Google Chrome on Desktop or Android, and you will have to allow the page to use your microphone.";
+    
+    });
 }
 
